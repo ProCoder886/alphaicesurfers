@@ -29,6 +29,7 @@ export function buildRider(colors) {
   });
 
   const root = new THREE.Group();
+  root.scale.setScalar(1.22); // riders read larger against the big valley
   const tilt = new THREE.Group();   // slope alignment + carve lean
   const flip = new THREE.Group();   // airborne flip rotation
   root.add(tilt);

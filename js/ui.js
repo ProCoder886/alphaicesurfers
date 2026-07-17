@@ -123,7 +123,7 @@ export class UIManager {
       </nav>
       <footer class="menu-footer">
         <button class="btn btn-small" id="btn-fullscreen">⛶ Fullscreen</button>
-        <span class="version">v1.3.0 · WebGL2</span>
+        <span class="version">v1.4.0 · WebGL2</span>
       </footer>`;
     this.addScreen('main', s);
 
@@ -195,6 +195,8 @@ export class UIManager {
           <div class="diff-label">DIFFICULTY</div>
           <div class="diff-row" id="diff-row"></div>
           <p class="diff-desc" id="diff-desc"></p>
+          <div class="diff-label">WEATHER</div>
+          <div class="diff-row" id="weather-row"></div>
           <div id="ride-best" class="ride-best"></div>
           <button class="btn btn-big btn-accent" id="btn-start" disabled>START</button>
         </section>
@@ -205,8 +207,8 @@ export class UIManager {
     });
     s.querySelector('#btn-start').addEventListener('click', () => {
       this.click();
-      const { mapId, modeId } = this.rideSelection;
-      if (mapId && modeId) this.game.startSession(mapId, modeId);
+      const { mapId, modeId, weatherId } = this.rideSelection;
+      if (mapId && modeId) this.game.startSession(mapId, modeId, weatherId || 'random');
     });
   }
 
@@ -269,6 +271,27 @@ export class UIManager {
     }
     const diffDef = game.config.gameplay.difficulties.find((d) => d.id === selected);
     this.screens.ride.querySelector('#diff-desc').textContent = diffDef ? diffDef.desc : '';
+
+    // Weather picker: Random or any state from the full catalogue.
+    if (!this.rideSelection.weatherId) this.rideSelection.weatherId = 'random';
+    const weatherRow = this.screens.ride.querySelector('#weather-row');
+    weatherRow.innerHTML = '';
+    const weatherOptions = [
+      { id: 'random', icon: '🎲', name: 'Random' },
+      ...game.config.weather.states.map((s) => ({ id: s.id, icon: s.icon || '❔', name: s.name }))
+    ];
+    for (const w of weatherOptions) {
+      const b = el('button',
+        `diff-chip weather-chip ${w.id === this.rideSelection.weatherId ? 'selected' : ''}`,
+        `${w.icon}<span>${w.name}</span>`);
+      b.title = w.name;
+      b.addEventListener('click', () => {
+        this.click();
+        this.rideSelection.weatherId = w.id;
+        this.refreshRideScreen();
+      });
+      weatherRow.appendChild(b);
+    }
 
     if (!this.rideSelection.modeId) this.rideSelection.modeId = 'freeroam';
     if (!this.rideSelection.mapId) this.rideSelection.mapId = game.unlockedMaps()[0].id;

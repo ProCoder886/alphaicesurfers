@@ -40,9 +40,7 @@ export class World {
 
     this.chunks = new Map();     // "cx,cz" -> chunk record
     this.buildQueue = [];
-    this.viewRadius = 3;         // chunk rings with terrain meshes
-    this.detailRadius = 1;       // rings at full resolution
-    this.obstacleRadius = 2;     // rings with obstacle meshes
+    this.aheadChunks = 7;        // forward streaming horizon (quality-scaled)
 
     this.checkpoints = [];
     this.avalanche = null;
@@ -351,7 +349,7 @@ export class World {
         shadow: true
       },
       rock: { parts: [[rock, flat(pal.rock)], [rockSnow, snowMat]], shadow: true },
-      spike: { parts: [[spike, glow(pal.ice, 0.25, { roughness: 0.2, metalness: 0.4 })]], shadow: true },
+      spike: { parts: [[spike, glow('#a12a52', 0.5, { roughness: 0.25 })]], shadow: true },
       tower: { parts: [[towerBody, flat(pal.rock)], [towerCap, glow(pal.neon, 2.2)]], shadow: true },
       crystal: { parts: [[crystal, glow(pal.crystal, 1.2, { transparent: true, opacity: 0.92 })]], shadow: false },
       ring: { parts: [[ring, glow(pal.neon, 2.0)]], shadow: false },
@@ -362,14 +360,15 @@ export class World {
       nitro: { parts: [[nitro, glow('#ff5a2a', 1.9)]], shadow: false, powerup: true },
       star: { parts: [[star, glow('#ffd166', 1.8)]], shadow: false, powerup: true },
       clock: { parts: [[clock, glow('#b0f0a8', 1.6)]], shadow: false, powerup: true },
+      // Hazards wear dark warning colors that pop against white snow.
       icefang: {
-        parts: [[fangA, glow(pal.ice, 0.45, { roughness: 0.15, metalness: 0.5, transparent: true, opacity: 0.95 })],
-                [fangB, glow(pal.ice, 0.35, { roughness: 0.15, metalness: 0.5 })],
-                [fangC, glow(pal.ice, 0.3, { roughness: 0.2, metalness: 0.4 })]],
+        parts: [[fangA, glow('#d92b45', 0.75, { roughness: 0.25 })],
+                [fangB, glow('#b31f38', 0.6, { roughness: 0.25 })],
+                [fangC, glow('#8f1830', 0.5, { roughness: 0.3 })]],
         shadow: true
       },
-      iceridge: { parts: [[iceridge, glow(pal.ice, 0.4, { roughness: 0.12, metalness: 0.55, transparent: true, opacity: 0.9 })]], shadow: true },
-      boulder: { parts: [[boulder, glow(pal.ice, 0.25, { roughness: 0.25, metalness: 0.45 })]], shadow: true },
+      iceridge: { parts: [[iceridge, glow('#8b3ddb', 0.8, { roughness: 0.2, transparent: true, opacity: 0.94 })]], shadow: true },
+      boulder: { parts: [[boulder, glow('#5e2f8e', 0.55, { roughness: 0.3 })]], shadow: true },
       icearch: { parts: [[archGeo, glow(pal.crystal, 1.1, { roughness: 0.2, metalness: 0.3 })]], shadow: false }
     };
     this.pulseMaterials = [
@@ -665,47 +664,67 @@ export class World {
     const fx = focus ? focus.x : 0, fz = focus ? focus.z : 0;
     const ccx = Math.floor(fx / CHUNK_SIZE);
     const ccz = Math.floor(fz / CHUNK_SIZE);
-    const R = this.viewRadius;
 
-    // Request needed chunks (nearest first).
-    for (let r = 0; r <= R; r++) {
-      for (let dz = -r; dz <= r; dz++) {
-        for (let dx = -r; dx <= r; dx++) {
-          if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
-          this.requestChunk(ccx + dx, ccz + dz);
-        }
+    // The run is one-directional (downhill = +Z), so the streaming window
+    // is asymmetric: a long corridor of chunks generates AHEAD of the
+    // rider (the route literally builds itself as you progress) with only
+    // a short tail kept behind. Lateral coverage spans the valley walls.
+    const AHEAD = this.aheadChunks;   // quality-scaled forward horizon
+    const BEHIND = 1;
+    const LATERAL = 2;
+
+    // Request nearest-ahead first so the route in front always exists.
+    for (let dz = -BEHIND; dz <= AHEAD; dz++) {
+      for (let dx = -LATERAL; dx <= LATERAL; dx++) {
+        this.requestChunk(ccx + dx, ccz + dz);
       }
     }
-    // The run always heads downhill (+Z): pre-build an extra column ahead
-    // so the world instantiates in front of fast riders, never under them.
-    for (let dx = -1; dx <= 1; dx++) this.requestChunk(ccx + dx, ccz + R + 1);
 
-    // Build up to 2 chunk meshes per frame to avoid frame spikes.
+    // Build meshes closest-to-the-rider-first, a few per frame.
+    if (this.buildQueue.length > 1) {
+      this.buildQueue.sort((a, b) => {
+        const pa = Math.abs(a.cz - ccz) * 2 + Math.abs(a.cx - ccx);
+        const pb = Math.abs(b.cz - ccz) * 2 + Math.abs(b.cx - ccx);
+        return pa - pb;
+      });
+    }
+    // If the ground right under/ahead of the rider has no mesh yet
+    // (respawn, teleport, very fast riding), build flat-out this frame.
+    let nearMissing = false;
+    for (let dz = 0; dz <= 1 && !nearMissing; dz++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const c = this.chunks.get(this.chunkKey(ccx + dx, ccz + dz));
+        if (c && !c.mesh) { nearMissing = true; break; }
+      }
+    }
     let built = 0;
-    while (this.buildQueue.length && built < 2) {
+    const budget = nearMissing ? 9 : 3;
+    while (this.buildQueue.length && built < budget) {
       const record = this.buildQueue.shift();
       if (!this.chunks.has(record.key)) continue;
-      const ring = Math.max(Math.abs(record.cx - ccx), Math.abs(record.cz - ccz));
-      if (ring > R) continue;
-      this.buildChunkMesh(record, ring <= this.detailRadius ? 1 : 4);
+      const dz = record.cz - ccz, dx = record.cx - ccx;
+      if (dz < -BEHIND - 1 || dz > AHEAD || Math.abs(dx) > LATERAL) continue;
+      this.buildChunkMesh(record, (dz >= -1 && dz <= 2 && Math.abs(dx) <= 1) ? 1 : 4);
       built++;
     }
 
     // LOD swaps + eviction + obstacle visibility.
     for (const [key, chunk] of this.chunks) {
-      const ring = Math.max(Math.abs(chunk.cx - ccx), Math.abs(chunk.cz - ccz));
-      if (ring > R + 1) {
+      const dz = chunk.cz - ccz, dx = chunk.cx - ccx;
+      if (dz < -BEHIND - 1 || dz > AHEAD + 1 || Math.abs(dx) > LATERAL + 1) {
         this.disposeChunkMeshes(chunk);
         this.chunks.delete(key);
         continue;
       }
       chunk.lastNeeded = this.timeU.value;
-      const wantLod = ring <= this.detailRadius ? 1 : 4;
-      if (chunk.mesh && chunk.lod !== wantLod && ring <= R) {
+      const wantLod = (dz >= -1 && dz <= 2 && Math.abs(dx) <= 1) ? 1 : 4;
+      if (chunk.mesh && chunk.lod !== wantLod) {
         this.buildChunkMesh(chunk, wantLod);
       }
       if (chunk.obstacleMeshes) {
-        const show = ring <= this.obstacleRadius;
+        // Near window shows everything; far chunks only along the route.
+        const show = (dz >= -1 && dz <= 4 && Math.abs(dx) <= 2)
+          || (dz > 4 && dz <= AHEAD && Math.abs(dx) <= 1);
         for (const im of chunk.obstacleMeshes) {
           im.visible = show && !im.userData.consumed;
         }

@@ -34,7 +34,7 @@
         "slope": 0.34,
         "floorWidth": 16,
         "wallSpan": 95,
-        "wallHeight": 55,
+        "wallHeight": 88,
         "ridgeAmp": 42,
         "roughness": 0.5,
         "iceRatio": 0.3
@@ -91,7 +91,7 @@
         "slope": 0.27,
         "floorWidth": 20,
         "wallSpan": 115,
-        "wallHeight": 42,
+        "wallHeight": 67,
         "ridgeAmp": 24,
         "roughness": 0.4,
         "iceRatio": 0.55
@@ -147,7 +147,7 @@
         "slope": 0.38,
         "floorWidth": 15,
         "wallSpan": 85,
-        "wallHeight": 62,
+        "wallHeight": 99,
         "ridgeAmp": 55,
         "roughness": 0.6,
         "iceRatio": 0.45
@@ -203,7 +203,7 @@
         "slope": 0.32,
         "floorWidth": 18,
         "wallSpan": 90,
-        "wallHeight": 48,
+        "wallHeight": 77,
         "ridgeAmp": 30,
         "roughness": 0.45,
         "iceRatio": 0.6,
@@ -260,7 +260,7 @@
         "slope": 0.46,
         "floorWidth": 14,
         "wallSpan": 80,
-        "wallHeight": 70,
+        "wallHeight": 112,
         "ridgeAmp": 70,
         "roughness": 0.7,
         "iceRatio": 0.25
@@ -316,7 +316,7 @@
         "slope": 0.34,
         "floorWidth": 15,
         "wallSpan": 88,
-        "wallHeight": 58,
+        "wallHeight": 93,
         "ridgeAmp": 45,
         "roughness": 0.55,
         "iceRatio": 0.4
@@ -371,7 +371,7 @@
         "slope": 0.4,
         "floorWidth": 13,
         "wallSpan": 82,
-        "wallHeight": 66,
+        "wallHeight": 106,
         "ridgeAmp": 58,
         "roughness": 0.6,
         "iceRatio": 0.35
@@ -426,7 +426,7 @@
         "slope": 0.42,
         "floorWidth": 12,
         "wallSpan": 78,
-        "wallHeight": 56,
+        "wallHeight": 90,
         "ridgeAmp": 34,
         "roughness": 0.5,
         "iceRatio": 0.75,

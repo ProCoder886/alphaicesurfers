@@ -240,6 +240,9 @@
 
 .diff-desc { font-size: 0.74rem !important; min-height: 2.1em; }
 
+.weather-chip { font-size: 0.62rem; padding: 0.32rem 0.5rem; }
+#weather-row { max-height: 84px; overflow-y: auto; }
+
 /* ---------------- garage ---------------- */
 
 .garage-layout {

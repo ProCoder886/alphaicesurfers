@@ -288,15 +288,15 @@ const SKY_THEMES = [
 const QUALITY_PRESETS = {
   low: {
     pixelRatio: 1, shadowMap: 1024, shadows: true, obstacleShadows: false,
-    snowParticles: 900, viewRadius: 2, detailRadius: 1
+    snowParticles: 900, aheadChunks: 5
   },
   medium: {
     pixelRatio: 1.5, shadowMap: 2048, shadows: true, obstacleShadows: true,
-    snowParticles: 2200, viewRadius: 3, detailRadius: 1
+    snowParticles: 2200, aheadChunks: 7
   },
   high: {
     pixelRatio: 2, shadowMap: 4096, shadows: true, obstacleShadows: true,
-    snowParticles: 3800, viewRadius: 4, detailRadius: 2
+    snowParticles: 3800, aheadChunks: 9
   }
 };
 
@@ -323,6 +323,7 @@ export class Game {
     this.timeScaleTimer = 0;
     this.autoSlowmoCooldown = 0;
     this.meteorTimer = 0;
+    this.weatherOverride = null;
     // Coarse-pointer devices get mobile-tuned rendering defaults.
     this.isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
       && window.matchMedia('(pointer: coarse)').matches;
@@ -350,7 +351,7 @@ export class Game {
   cinematicSlowmo(duration) {
     if (this.timeScale < 1 || this.autoSlowmoCooldown > 0) return;
     if (this.state !== 'playing') return;
-    this.autoSlowmoCooldown = 9;
+    this.autoSlowmoCooldown = 6;
     this.setTimeScale(0.45, duration);
   }
 
@@ -427,6 +428,12 @@ export class Game {
     });
     this.bus.on('nearmiss', () => this.cinematicSlowmo(0.5));
     this.bus.on('closepass', () => this.cinematicSlowmo(0.5));
+    this.bus.on('ring', () => this.cinematicSlowmo(0.35));
+    this.bus.on('arch', () => this.cinematicSlowmo(0.5));
+    this.bus.on('perfect', () => this.cinematicSlowmo(0.4));
+    this.bus.on('power-used', (p) => {
+      if (p.id === 'wingsuit') this.cinematicSlowmo(0.45);
+    });
   }
 
   handlePauseAction() {
@@ -449,9 +456,7 @@ export class Game {
     }
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
     this.renderer.shadowMap.enabled = q.shadows;
-    this.world.viewRadius = q.viewRadius;
-    this.world.detailRadius = q.detailRadius;
-    this.world.obstacleRadius = Math.min(2, q.viewRadius);
+    this.world.aheadChunks = q.aheadChunks;
     if (this.world.sun) this.world.sun.shadow.mapSize.setScalar(q.shadowMap);
     if (!initial) this.bus.emit('quality', { level });
   }
@@ -481,10 +486,11 @@ export class Game {
     this.cameras.menuPhase = 0;
   }
 
-  startSession(mapId, modeId) {
+  startSession(mapId, modeId, weatherId) {
     const map = this.config.maps.maps.find((m) => m.id === mapId);
     const mode = this.config.gameplay.modes.find((m) => m.id === modeId);
     if (!map || !mode) return;
+    if (weatherId !== undefined) this.weatherOverride = weatherId;
 
     this.ui.showSessionLoading(map, mode);
     // Yield a frame so the loading overlay paints before the heavy sync work.
@@ -585,6 +591,7 @@ export class Game {
     this.teardownSession();
     this.mode = null;
     this.map = null;
+    this.weatherOverride = null;
     this.loadMenuWorld();
     this.state = 'menu';
     this.ui.showScreen('main');

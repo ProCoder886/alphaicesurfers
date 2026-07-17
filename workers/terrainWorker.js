@@ -88,7 +88,9 @@ export function mulberry32(a) {
  * with long, gentle curves.
  */
 export function corridorX(z) {
-  return Math.sin(z * 0.006) * 26 + Math.sin(z * 0.0016 + 1.7) * 55;
+  return Math.sin(z * 0.006) * 26
+    + Math.sin(z * 0.0035 + 0.9) * 42   // sweeping mid-frequency curves
+    + Math.sin(z * 0.0016 + 1.7) * 55;
 }
 
 function smoothstep01(t) {
@@ -142,8 +144,9 @@ export class TerrainGenerator {
       h += fbm(x * 0.09, z * 0.09, s + 23, 2) * 0.4 * p.roughness;
     } else {
       const t = (d - floorHW) / wallSpan;
-      // Concave quarter-pipe transition into the wall.
-      const wall = wallH * Math.pow(smoothstep01(t), 1.55);
+      // Concave quarter-pipe transition into the wall — rises early and
+      // tall enough that the valley genuinely contains the rider.
+      const wall = wallH * Math.pow(smoothstep01(t), 1.3);
       h += 2.2 + wall;
       // Texture the walls, fading in away from the lip of the pipe.
       const wallNoise = fbm(x * 0.03, z * 0.03, s + 7, 3) * 6

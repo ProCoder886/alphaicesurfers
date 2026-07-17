@@ -14,6 +14,7 @@
  */
 
 import * as THREE from 'three';
+import { corridorX } from '../workers/terrainWorker.js';
 
 const _fwd = new THREE.Vector3();
 const _flat = new THREE.Vector3();
@@ -245,6 +246,18 @@ export class PhysicsEngine {
       const vDotN = body.vel.dot(_n);
       if (vDotN < 0) body.vel.addScaledVector(_n, -vDotN);
       body.grounded = true;
+    }
+
+    // --- valley boundary: nobody rides out over the walls ---
+    if (this.world.map) {
+      const t = this.world.map.terrain;
+      const limit = (t.floorWidth || 16) + (t.wallSpan || 95) * 0.85;
+      const cor = corridorX(body.pos.z);
+      const dxc = body.pos.x - cor;
+      if (Math.abs(dxc) > limit) {
+        body.pos.x = cor + Math.sign(dxc) * limit;
+        if (body.vel.x * Math.sign(dxc) > 0) body.vel.x *= -0.25;
+      }
     }
 
     // Track downhill component for HUD/jump assist.

@@ -62,8 +62,21 @@ export class WeatherSystem {
     this.timeOfDay = map.startTime !== undefined ? map.startTime : 0.3;
     this.dynamic = !!(mode && mode.weatherDynamic);
     this.dynamicTimer = this.nextDynamicDelay();
+    // Free Roam (allWeather) rotates through the FULL catalogue.
+    this.allWeather = !!(mode && mode.allWeather);
 
-    const startId = map.startWeather || map.weatherSet[0];
+    // Menu-selected weather override: a specific state pins the weather
+    // for the whole run; "random" rolls any state from the catalogue.
+    const override = this.game.weatherOverride;
+    let startId = map.startWeather || map.weatherSet[0];
+    if (override && override !== 'random' && this.states.has(override)) {
+      startId = override;
+      this.dynamic = false;
+    } else if (override === 'random' || this.allWeather) {
+      const all = [...this.states.keys()];
+      startId = all[Math.floor(Math.random() * all.length)];
+      this.allWeather = this.allWeather || this.dynamic;
+    }
     this.setState(startId, true);
   }
 
@@ -142,7 +155,7 @@ export class WeatherSystem {
 
   buildClouds(pal) {
     const sh = this.game.assets.shaders.clouds;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 14; i++) {
       const uniforms = {
         uTime: { value: 0 },
         uOpacity: { value: 0.4 },
@@ -159,9 +172,9 @@ export class WeatherSystem {
       });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(420, 160), mat);
       mesh.rotation.x = -Math.PI / 2 + 0.35;
-      mesh.userData.angle = (i / 9) * Math.PI * 2;
-      mesh.userData.radius = 340 + (i % 3) * 130;
-      mesh.userData.height = 240 + (i % 3) * 60;
+      mesh.userData.angle = (i / 14) * Math.PI * 2;
+      mesh.userData.radius = 320 + (i % 4) * 110;
+      mesh.userData.height = 230 + (i % 3) * 65;
       mesh.userData.uniforms = uniforms;
       this.clouds.push(mesh);
       this.group.add(mesh);
@@ -171,7 +184,7 @@ export class WeatherSystem {
   /** Thin, high, slow cirrus veils above the cumulus layer. */
   buildCirrus(pal) {
     const sh = this.game.assets.shaders.clouds;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const uniforms = {
         uTime: { value: i * 40 },
         uOpacity: { value: 0.16 },
@@ -188,8 +201,8 @@ export class WeatherSystem {
       });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(760, 90), mat);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.userData.angle = (i / 4) * Math.PI * 2 + 0.7;
-      mesh.userData.radius = 420 + i * 90;
+      mesh.userData.angle = (i / 6) * Math.PI * 2 + 0.7;
+      mesh.userData.radius = 400 + i * 70;
       mesh.userData.height = 400;
       mesh.userData.uniforms = uniforms;
       this.clouds.push(mesh); // shares the cloud drift/update path
@@ -294,7 +307,8 @@ export class WeatherSystem {
   }
 
   pickNextState() {
-    const set = this.map.weatherSet.filter((id) => this.states.has(id));
+    const set = (this.allWeather ? [...this.states.keys()] : this.map.weatherSet)
+      .filter((id) => this.states.has(id));
     const pool = [];
     for (const id of set) {
       if (this.current && id === this.current.id) continue;
@@ -380,9 +394,9 @@ export class WeatherSystem {
       u.uHorizonColor.value.copy(_colB).multiplyScalar(gloom);
     }
 
-    // --- fog ---
+    // --- fog (floored so the streaming frontier is always haze-hidden) ---
     if (game.scene.fog) {
-      game.scene.fog.density = this.prop('fogDensity');
+      game.scene.fog.density = Math.max(0.0021, this.prop('fogDensity'));
       _colA.set(pal.fog);
       // Darken fog at night.
       game.scene.fog.color.copy(_colA).multiplyScalar(1 - night * 0.72);
@@ -397,13 +411,14 @@ export class WeatherSystem {
     this.wind.lerp(this.windTarget, Math.min(1, dt * 0.8));
     game.physics.wind.copy(this.wind);
 
-    // --- snowfall ---
+    // --- precipitation (snow / hail / ice rain via state params) ---
     const snowRate = this.prop('snowRate');
     this.snowUniforms.uTime.value += dt;
     this.snowUniforms.uOpacity.value = snowRate * 0.9;
     this.snowUniforms.uWind.value.copy(this.wind).multiplyScalar(2.5);
     this.snowUniforms.uCamPos.value.copy(game.camera.position);
-    this.snowUniforms.uFallSpeed.value = 5 + snowRate * 6;
+    this.snowUniforms.uFallSpeed.value = this.prop('fallSpeed') || 8;
+    this.snowUniforms.uSize.value = this.prop('particleSize') || 2.6;
     this.snow.visible = snowRate > 0.01;
 
     // --- aurora ---

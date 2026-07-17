@@ -1,6 +1,6 @@
 {
   "title": "Alpha Ice Surfers 3D",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "modes": [
     {
       "id": "freeroam",
@@ -12,6 +12,7 @@
       "timeLimit": 0,
       "scoring": true,
       "weatherDynamic": true,
+      "allWeather": true,
       "unlockLevel": 1
     },
     {
@@ -107,9 +108,9 @@
     "pause": ["Escape"]
   },
   "camera": {
-    "followDistance": 7.5,
-    "followHeight": 3.0,
-    "lookAhead": 6.0,
+    "followDistance": 5.6,
+    "followHeight": 2.4,
+    "lookAhead": 5.5,
     "baseFov": 70,
     "speedFovGain": 22,
     "boostFovKick": 10,
