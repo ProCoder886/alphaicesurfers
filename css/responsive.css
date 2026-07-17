@@ -1,0 +1,65 @@
+/* responsive.css — breakpoints, touch layouts and the landscape lock. */
+
+/* The game is landscape-only on phones/tablets: block portrait. */
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate-overlay { display: flex; }
+}
+
+/* Also nudge very narrow desktop windows. */
+@media (orientation: portrait) and (max-width: 560px) {
+  #rotate-overlay { display: flex; }
+}
+
+/* ---------------- compact layouts ---------------- */
+
+@media (max-width: 900px) {
+  .ride-layout { grid-template-columns: 1fr 1fr; }
+  .ride-summary { grid-column: 1 / -1; position: static; }
+}
+
+@media (max-width: 640px), (max-height: 480px) {
+  .ride-layout { grid-template-columns: 1fr; gap: 0.8rem; }
+  .card-list { max-height: 30vh; }
+  .menu-header { margin-top: 1.5vh; }
+  .menu-nav { margin-top: 1.5vh; gap: 0.45rem; }
+  .menu-nav .btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; }
+  .btn-big { font-size: 1rem; padding: 0.7rem 1.6rem; }
+  .player-card { margin-top: 1.2vh; padding: 0.6rem 0.9rem; }
+
+  .hud-speed { font-size: 2.1rem; }
+  .hud-timer { font-size: 1.4rem; }
+  .hud-score { font-size: 1.2rem; }
+  .hud-countdown { font-size: 4rem; }
+  #minimap { width: 104px; height: 104px; }
+  .trick-toast { font-size: 1rem; }
+
+  .pause-panel, .results-panel { padding: 1.1rem 1.2rem; }
+  .results-row { font-size: 0.85rem; gap: 1rem; }
+}
+
+/* Short landscape phones: tighten vertical chrome. */
+@media (max-height: 420px) {
+  .hud-topleft, .hud-topright, .hud-topcenter { top: 6px; }
+  .hud-bottomleft, .hud-bottomright { bottom: 8px; }
+  .touch-stick { bottom: 8vh; width: 100px; height: 100px; }
+  .touch-buttons { bottom: 7vh; }
+  .touch-btn { width: 54px; height: 54px; }
+  .touch-btn-big { width: 70px; height: 70px; }
+  .screen { padding: 8px 12px; }
+  .menu-header { margin-top: 0.5vh; }
+  .game-title { font-size: 1.4rem; }
+}
+
+/* Large desktop: give menus more air. */
+@media (min-width: 1600px) {
+  .menu-nav { width: 380px; }
+  .hud-speed { font-size: 3.6rem; }
+}
+
+/* iOS safe areas (notches). */
+@supports (padding: max(0px)) {
+  .hud-topleft { left: max(2vw, env(safe-area-inset-left, 10px)); }
+  .hud-topright { right: max(2vw, env(safe-area-inset-right, 10px)); }
+  .touch-stick { left: max(4vw, env(safe-area-inset-left, 12px)); }
+  .touch-buttons { right: max(4vw, env(safe-area-inset-right, 12px)); }
+}

@@ -1,0 +1,29 @@
+{
+  "scoring": {
+    "flipPer180": 260,
+    "spinPer180": 160,
+    "grabPerSecond": 130,
+    "airTimePerSecond": 45,
+    "perfectLandingMultiplier": 1.5,
+    "goodLandingMultiplier": 1.0,
+    "sketchyLandingMultiplier": 0.5,
+    "comboStepMultiplier": 0.25,
+    "comboMaxMultiplier": 8,
+    "comboTimeout": 4.0,
+    "minAirTimeForTrick": 0.35
+  },
+  "names": {
+    "flipForward": ["Frontflip", "Double Frontflip", "Triple Frontflip", "Quad Frontflip"],
+    "flipBackward": ["Backflip", "Double Backflip", "Triple Backflip", "Quad Backflip"],
+    "spins": { "180": "180", "360": "360", "540": "540", "720": "720", "900": "900", "1080": "1080", "1260": "1260", "1440": "1440" },
+    "grabs": ["Indy Grab", "Melon Grab", "Stalefish", "Method Air", "Nose Grab", "Tail Grab"],
+    "combined": {
+      "flipSpin": "Corkscrew",
+      "bigAir": "Mega Air",
+      "perfect": "Perfect Landing!"
+    }
+  },
+  "announcer": {
+    "comboLevels": ["Nice!", "Great!", "Sick!", "Insane!", "LEGENDARY!"]
+  }
+}

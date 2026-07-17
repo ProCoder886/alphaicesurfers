@@ -1,0 +1,55 @@
+{
+  "gravity": 13.4,
+  "fixedTimeStep": 0.008333,
+  "maxSubSteps": 6,
+  "rider": {
+    "mass": 82,
+    "radius": 0.55,
+    "maxSpeed": 46,
+    "tuckDragScale": 0.45,
+    "brakeFriction": 0.35,
+    "turnSpeed": 2.7,
+    "turnSpeedAtMax": 1.5,
+    "airYawRate": 4.1,
+    "airPitchRate": 3.7,
+    "linearDrag": 0.0018,
+    "carveScrub": 0.22,
+    "jumpBase": 5.2,
+    "jumpCharged": 4.6,
+    "jumpChargeTime": 0.65,
+    "slopeJumpAssist": 0.35,
+    "landingPerfectAngle": 16,
+    "landingGoodAngle": 45,
+    "landingCrashAngle": 72,
+    "crashImpactSpeed": 9.5,
+    "crashRecoveryTime": 1.5,
+    "softLandingSpeedKeep": 0.96,
+    "hardLandingSpeedKeep": 0.72
+  },
+  "surfaces": [
+    { "id": 0, "name": "Powder Snow",  "friction": 0.050, "grip": 9.0, "audio": "powder" },
+    { "id": 1, "name": "Packed Snow",  "friction": 0.026, "grip": 7.0, "audio": "packed" },
+    { "id": 2, "name": "Blue Ice",     "friction": 0.009, "grip": 3.2, "audio": "ice" },
+    { "id": 3, "name": "Black Ice",    "friction": 0.004, "grip": 2.1, "audio": "ice" },
+    { "id": 4, "name": "Frozen Lake",  "friction": 0.006, "grip": 2.6, "audio": "ice" }
+  ],
+  "wind": {
+    "maxForce": 3.2,
+    "gustFrequency": 0.25,
+    "airborneMultiplier": 2.2
+  },
+  "avalanche": {
+    "startDistance": 70,
+    "baseSpeed": 17,
+    "acceleration": 0.055,
+    "maxSpeed": 34
+  },
+  "ai": {
+    "lookAheadNear": 8,
+    "lookAheadFar": 22,
+    "avoidStrength": 2.4,
+    "rubberBandRange": 90,
+    "rubberBandBoost": 0.16,
+    "mistakeCooldown": [ 8, 22 ]
+  }
+}

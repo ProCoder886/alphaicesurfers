@@ -1,0 +1,14 @@
+{
+  "types": [
+    { "id": "tree",    "kind": "solid",   "radius": 1.1, "baseDensity": 9,  "minSlopeClear": 0.85, "points": 0 },
+    { "id": "rock",    "kind": "solid",   "radius": 1.6, "baseDensity": 4,  "minSlopeClear": 0.0,  "points": 0 },
+    { "id": "spike",   "kind": "solid",   "radius": 1.0, "baseDensity": 3,  "minSlopeClear": 0.0,  "points": 0 },
+    { "id": "tower",   "kind": "solid",   "radius": 4.5, "baseDensity": 2,  "minSlopeClear": 0.0,  "points": 0, "cityOnly": true },
+    { "id": "crystal", "kind": "trigger", "radius": 2.0, "baseDensity": 5,  "points": 150, "effect": "collect" },
+    { "id": "ring",    "kind": "trigger", "radius": 3.4, "baseDensity": 1.6, "points": 300, "effect": "boostRing", "hover": 5.5 },
+    { "id": "ramp",    "kind": "trigger", "radius": 3.0, "baseDensity": 1.8, "points": 0,   "effect": "ramp", "kick": 0.34 },
+    { "id": "pad",     "kind": "trigger", "radius": 2.2, "baseDensity": 1.2, "points": 100, "effect": "bounce", "bounce": 13 }
+  ],
+  "corridorClearance": 7,
+  "spawnClearRadius": 26
+}

@@ -1,0 +1,48 @@
+{
+  "levels": {
+    "baseXP": 400,
+    "growth": 1.28,
+    "maxLevel": 50
+  },
+  "dailyReward": {
+    "baseXP": 150,
+    "streakBonusXP": 50,
+    "maxStreak": 7
+  },
+  "characters": [
+    { "id": "alpha",  "name": "Alpha",        "unlockLevel": 1,  "suit": "#2f6fce", "accent": "#ff4f6b" },
+    { "id": "frost",  "name": "Frost",        "unlockLevel": 3,  "suit": "#1cc4b0", "accent": "#ffffff" },
+    { "id": "ember",  "name": "Ember",        "unlockLevel": 6,  "suit": "#e2543a", "accent": "#ffd166" },
+    { "id": "viper",  "name": "Viper",        "unlockLevel": 10, "suit": "#57d132", "accent": "#1b1f24" },
+    { "id": "nova",   "name": "Nova",         "unlockLevel": 14, "suit": "#8b5cf6", "accent": "#f0abfc" },
+    { "id": "shadow", "name": "Shadow",       "unlockLevel": 18, "suit": "#22262e", "accent": "#00e5ff" }
+  ],
+  "boards": [
+    { "id": "rookie",   "name": "Rookie Blade",    "unlockLevel": 1,  "color": "#3a86ff", "glow": "#7fd4ff", "stat": "Balanced" },
+    { "id": "glacier",  "name": "Glacier Carver",  "unlockLevel": 4,  "color": "#c0f0ff", "glow": "#ffffff", "stat": "+Grip" },
+    { "id": "magma",    "name": "Magma Runner",    "unlockLevel": 8,  "color": "#ff5a2a", "glow": "#ffc94a", "stat": "+Boost" },
+    { "id": "aurora",   "name": "Aurora Wing",     "unlockLevel": 12, "color": "#37e6a0", "glow": "#a9f8ff", "stat": "+Air" },
+    { "id": "phantom",  "name": "Phantom Edge",    "unlockLevel": 16, "color": "#171a21", "glow": "#ff4fd8", "stat": "+Speed" },
+    { "id": "quantum",  "name": "Quantum Drift",   "unlockLevel": 20, "color": "#00e5ff", "glow": "#c86bff", "stat": "All Stats" }
+  ],
+  "achievements": [
+    { "id": "first_ride",     "name": "First Tracks",       "desc": "Complete your first session.",              "stat": "sessions",        "target": 1,      "xp": 100 },
+    { "id": "first_trick",    "name": "Air Apparent",       "desc": "Land your first trick.",                    "stat": "tricksLanded",    "target": 1,      "xp": 100 },
+    { "id": "backflip_10",    "name": "Gravity Optional",   "desc": "Land 10 flips.",                            "stat": "flipsLanded",     "target": 10,     "xp": 200 },
+    { "id": "spin_master",    "name": "Spin Doctor",        "desc": "Land 25 spins.",                            "stat": "spinsLanded",     "target": 25,     "xp": 200 },
+    { "id": "combo_25k",      "name": "Chain Reaction",     "desc": "Score a 25,000 point combo.",               "stat": "bestCombo",       "target": 25000,  "xp": 300 },
+    { "id": "combo_100k",     "name": "Unstoppable",        "desc": "Score a 100,000 point combo.",              "stat": "bestCombo",       "target": 100000, "xp": 600 },
+    { "id": "speed_100",      "name": "Ice Bullet",         "desc": "Reach 100 km/h.",                           "stat": "topSpeedKmh",     "target": 100,    "xp": 250 },
+    { "id": "speed_140",      "name": "Terminal Velocity",  "desc": "Reach 140 km/h.",                           "stat": "topSpeedKmh",     "target": 140,    "xp": 500 },
+    { "id": "dist_10k",       "name": "Long Hauler",        "desc": "Ride 10 km total.",                         "stat": "totalDistance",   "target": 10000,  "xp": 300 },
+    { "id": "dist_42k",       "name": "Ice Marathon",       "desc": "Ride 42.2 km total.",                       "stat": "totalDistance",   "target": 42200,  "xp": 600 },
+    { "id": "crystals_100",   "name": "Crystal Hoarder",    "desc": "Collect 100 crystals.",                     "stat": "crystals",        "target": 100,    "xp": 300 },
+    { "id": "perfect_10",     "name": "Butter Landing",     "desc": "Nail 10 perfect landings.",                 "stat": "perfectLandings", "target": 10,     "xp": 250 },
+    { "id": "airtime_5",      "name": "Cloud Surfer",       "desc": "Stay airborne for 5 seconds in one jump.",  "stat": "bestAirTime",     "target": 5,      "xp": 300 },
+    { "id": "finish_tt",      "name": "Against The Clock",  "desc": "Finish a Time Trial.",                      "stat": "timeTrialsDone",  "target": 1,      "xp": 200 },
+    { "id": "gold_medal",     "name": "Golden Edge",        "desc": "Win a gold medal.",                         "stat": "goldMedals",      "target": 1,      "xp": 400 },
+    { "id": "escape_2k",      "name": "Avalanche Whisperer","desc": "Outrun an avalanche for 2 km.",             "stat": "bestEscape",      "target": 2000,   "xp": 400 },
+    { "id": "win_race",       "name": "Podium Finish",      "desc": "Win a Championship Race.",                  "stat": "racesWon",        "target": 1,      "xp": 400 },
+    { "id": "level_10",       "name": "Alpha Status",       "desc": "Reach level 10.",                           "stat": "level",           "target": 10,     "xp": 500 }
+  ]
+}

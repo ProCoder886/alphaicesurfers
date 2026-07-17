@@ -1,0 +1,140 @@
+{
+  "title": "Alpha Ice Surfers 3D",
+  "version": "1.0.0",
+  "modes": [
+    {
+      "id": "freeroam",
+      "name": "Free Roam",
+      "desc": "Explore the open mountain. No timers, no pressure — carve, jump and discover.",
+      "icon": "🏔️",
+      "aiRiders": 2,
+      "checkpoints": 0,
+      "timeLimit": 0,
+      "scoring": true,
+      "weatherDynamic": true,
+      "unlockLevel": 1
+    },
+    {
+      "id": "timetrial",
+      "name": "Time Trial",
+      "desc": "Race the clock through checkpoint gates. Beat your ghost and chase medals.",
+      "icon": "⏱️",
+      "aiRiders": 0,
+      "checkpoints": 10,
+      "timeLimit": 0,
+      "scoring": false,
+      "ghost": true,
+      "weatherDynamic": false,
+      "unlockLevel": 1
+    },
+    {
+      "id": "endless",
+      "name": "Endless Ice Run",
+      "desc": "Ride forever down an infinite mountain. Distance is glory.",
+      "icon": "♾️",
+      "aiRiders": 0,
+      "checkpoints": 0,
+      "timeLimit": 0,
+      "scoring": true,
+      "distanceScore": true,
+      "weatherDynamic": true,
+      "unlockLevel": 2
+    },
+    {
+      "id": "trickattack",
+      "name": "Combo Rush",
+      "desc": "Two minutes on the clock. Chain flips, spins and grabs for the highest score.",
+      "icon": "🌀",
+      "aiRiders": 0,
+      "checkpoints": 0,
+      "timeLimit": 120,
+      "scoring": true,
+      "weatherDynamic": false,
+      "unlockLevel": 3
+    },
+    {
+      "id": "avalanche",
+      "name": "Avalanche Escape",
+      "desc": "A wall of snow is chasing you. Outrun it or be buried.",
+      "icon": "🌊",
+      "aiRiders": 0,
+      "checkpoints": 0,
+      "timeLimit": 0,
+      "scoring": true,
+      "distanceScore": true,
+      "avalanche": true,
+      "weatherDynamic": false,
+      "unlockLevel": 4
+    },
+    {
+      "id": "race",
+      "name": "Championship Race",
+      "desc": "Race AI pros through the gates. First across the finish takes the podium.",
+      "icon": "🏁",
+      "aiRiders": 5,
+      "checkpoints": 12,
+      "timeLimit": 0,
+      "scoring": false,
+      "race": true,
+      "weatherDynamic": false,
+      "unlockLevel": 5
+    },
+    {
+      "id": "zen",
+      "name": "Zen Mode",
+      "desc": "No score, no HUD clutter. Just you, the snow and the aurora.",
+      "icon": "🧘",
+      "aiRiders": 0,
+      "checkpoints": 0,
+      "timeLimit": 0,
+      "scoring": false,
+      "zen": true,
+      "weatherDynamic": true,
+      "unlockLevel": 1
+    }
+  ],
+  "controls": {
+    "steerLeft": ["KeyA", "ArrowLeft"],
+    "steerRight": ["KeyD", "ArrowRight"],
+    "tuck": ["KeyW", "ArrowUp"],
+    "brake": ["KeyS", "ArrowDown"],
+    "jump": ["Space"],
+    "boost": ["ShiftLeft", "ShiftRight"],
+    "grab": ["KeyE", "KeyK"],
+    "camera": ["KeyC"],
+    "photo": ["KeyP"],
+    "reset": ["KeyR"],
+    "pause": ["Escape"]
+  },
+  "camera": {
+    "followDistance": 7.5,
+    "followHeight": 3.0,
+    "lookAhead": 6.0,
+    "baseFov": 70,
+    "speedFovGain": 22,
+    "boostFovKick": 10,
+    "positionLerp": 5.0,
+    "shakeSpeedThreshold": 24
+  },
+  "boost": {
+    "max": 100,
+    "drainPerSecond": 34,
+    "accel": 14,
+    "fromTrickPerPoint": 0.012,
+    "fromPerfectLanding": 18,
+    "fromRing": 30,
+    "fromCrystal": 6
+  },
+  "xp": {
+    "scoreDivisor": 12,
+    "distanceDivisor": 30,
+    "finishBonus": 250,
+    "medalBonus": { "bronze": 100, "silver": 250, "gold": 600 }
+  },
+  "session": {
+    "countdownSeconds": 3,
+    "respawnDelay": 1.4,
+    "killDepth": -60,
+    "safePointInterval": 2.0
+  }
+}

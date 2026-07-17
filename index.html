@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="Alpha Ice Surfers 3D — carve, jump and trick your way down endless procedural frozen mountains. A AAA-quality HTML5 open-world ice surfing game.">
+  <meta name="theme-color" content="#0a1220">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Alpha Ice Surfers 3D</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%94%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./libs/three.module.min.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+    <div id="ui-root"></div>
+
+    <!-- Boot loading screen (static so it paints instantly) -->
+    <div id="screen-loading">
+      <div class="loading-inner">
+        <h1 class="game-title">ALPHA <span>ICE SURFERS</span> 3D</h1>
+        <div id="loading-bar"><div id="loading-bar-fill"></div></div>
+        <p id="loading-status">Waxing the board…</p>
+      </div>
+    </div>
+
+    <!-- Portrait blocker: the game is landscape-only on mobile -->
+    <div id="rotate-overlay">
+      <div class="rotate-inner">
+        <div class="rotate-icon">📱⟳</div>
+        <h2>Rotate your device</h2>
+        <p>Alpha Ice Surfers 3D plays in landscape mode.</p>
+      </div>
+    </div>
+  </div>
+
+  <noscript>
+    <div style="position:fixed;inset:0;background:#0a1220;color:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;text-align:center;padding:2rem;">
+      Alpha Ice Surfers 3D requires JavaScript and WebGL2.
+    </div>
+  </noscript>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+{
+  "dayLengthSeconds": 480,
+  "transitionSeconds": 12,
+  "dynamicIntervalRange": [ 55, 140 ],
+  "states": [
+    {
+      "id": "sunny",
+      "name": "Bluebird Day",
+      "fogDensity": 0.0016,
+      "lightScale": 1.0,
+      "ambientScale": 1.0,
+      "snowRate": 0.0,
+      "wind": [ 0.2, 1.2 ],
+      "cloudOpacity": 0.25,
+      "weight": 4
+    },
+    {
+      "id": "cloudy",
+      "name": "Overcast",
+      "fogDensity": 0.0028,
+      "lightScale": 0.72,
+      "ambientScale": 1.15,
+      "snowRate": 0.0,
+      "wind": [ 0.6, 2.0 ],
+      "cloudOpacity": 0.85,
+      "weight": 3
+    },
+    {
+      "id": "snow",
+      "name": "Light Snow",
+      "fogDensity": 0.0042,
+      "lightScale": 0.62,
+      "ambientScale": 1.1,
+      "snowRate": 0.45,
+      "wind": [ 0.8, 2.4 ],
+      "cloudOpacity": 0.9,
+      "weight": 3
+    },
+    {
+      "id": "heavysnow",
+      "name": "Heavy Snow",
+      "fogDensity": 0.0075,
+      "lightScale": 0.5,
+      "ambientScale": 1.05,
+      "snowRate": 1.0,
+      "wind": [ 1.4, 3.2 ],
+      "cloudOpacity": 1.0,
+      "weight": 2
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "fogDensity": 0.013,
+      "lightScale": 0.42,
+      "ambientScale": 0.95,
+      "snowRate": 1.0,
+      "wind": [ 2.6, 4.0 ],
+      "windPhysics": 1.0,
+      "cloudOpacity": 1.0,
+      "weight": 1
+    },
+    {
+      "id": "fog",
+      "name": "Freezing Fog",
+      "fogDensity": 0.011,
+      "lightScale": 0.55,
+      "ambientScale": 1.2,
+      "snowRate": 0.05,
+      "wind": [ 0.1, 0.8 ],
+      "cloudOpacity": 0.7,
+      "weight": 2
+    },
+    {
+      "id": "aurora",
+      "name": "Aurora Night",
+      "fogDensity": 0.0022,
+      "lightScale": 0.85,
+      "ambientScale": 0.9,
+      "snowRate": 0.08,
+      "wind": [ 0.3, 1.4 ],
+      "cloudOpacity": 0.15,
+      "forceNight": true,
+      "aurora": true,
+      "weight": 2
+    }
+  ]
+}
