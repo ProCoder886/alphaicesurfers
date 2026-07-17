@@ -103,16 +103,22 @@ export class TerrainGenerator {
   /** Analytic terrain height at any world position. Downhill is +Z. */
   height(x, z) {
     const p = this.p, s = this.seed;
-    let h = -z * p.slope;
-    h += ridged(x * 0.0042, z * 0.0042, s, 4) * p.ridgeAmp;
-    h += fbm(x * 0.016, z * 0.016, s + 7, 4) * p.amp;
-    h += fbm(x * 0.085, z * 0.085, s + 23, 3) * 1.6 * p.roughness;
+    const ridge = ridged(x * 0.0042, z * 0.0042, s, 4) * p.ridgeAmp;
+    const rolling = fbm(x * 0.016, z * 0.016, s + 7, 4) * p.amp;
+    const detail = fbm(x * 0.085, z * 0.085, s + 23, 3) * 1.6 * p.roughness;
+    let h = -z * p.slope + ridge + rolling + detail;
 
-    // Soften micro-bumps near the racing corridor so the main line flows.
+    // Keep the racing line clear: near the corridor, damp bumps and pull
+    // the big ridges toward their midline so a rideable groove runs down
+    // the middle while hills and walls stay tall on either side.
     const corridorDist = Math.abs(x - corridorX(z));
-    if (corridorDist < 26) {
-      const t = 1 - corridorDist / 26;
-      h -= fbm(x * 0.085, z * 0.085, s + 23, 3) * 1.6 * p.roughness * t * 0.8;
+    const W = 44;
+    if (corridorDist < W) {
+      let t = 1 - corridorDist / W;
+      t = t * t * (3 - 2 * t); // smoothstep — no crease at the edge
+      h -= detail * t * 0.9;
+      h -= rolling * t * 0.5;
+      h -= (ridge - p.ridgeAmp * 0.42) * t * 0.55;
     }
 
     if (p.city) {

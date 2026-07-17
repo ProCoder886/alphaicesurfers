@@ -54,8 +54,11 @@ virtual stick + buttons. Full details in [docs/controls.md](docs/controls.md).
   perfect landings, momentum-true carving with per-surface grip and friction.
 - **Dynamic weather & day/night** — bluebird days, blizzards, freezing fog and
   aurora borealis, all affecting visibility, wind physics and audio.
-- **AI riders** — same physics as the player, with racing lines, obstacle
-  avoidance, mistakes, and rubber-banding.
+- **AI riders** — up to 7 opponents running the same physics as the player,
+  with racing lines, obstacle avoidance, mistakes, and rubber-banding.
+- **Power-ups** — 🧲 Crystal Magnet, 🛡️ Ice Shield (eats one crash),
+  🔥 Nitro Surge, ✖️2 Score Star and ⏳ Time Extend, floating and spinning
+  along the racing line.
 - **Progression** — XP, 50 levels, unlockable riders and boards, 18
   achievements, daily login rewards, local leaderboards and statistics.
 - **Ghost racing & replays** — best Time Trial runs are recorded to IndexedDB

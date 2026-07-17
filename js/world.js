@@ -40,6 +40,7 @@ export class World {
 
     this.checkpoints = [];
     this.avalanche = null;
+    this.powerupAnim = new Set();
     this.timeU = { value: 0 };
     this.envTexture = null;
     this.sky = null;
@@ -125,6 +126,7 @@ export class World {
     this.chunks.clear();
     this.checkpoints = [];
     this.avalanche = null;
+    this.powerupAnim.clear();
     if (this.group) {
       this.group.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
@@ -271,6 +273,14 @@ export class World {
     const pad = new THREE.CylinderGeometry(2.0, 2.3, 0.55, 12);
     pad.translate(0, 0.28, 0);
 
+    // Power-up pickups — distinct silhouettes, individually animated.
+    const magnet = new THREE.TorusKnotGeometry(0.85, 0.26, 48, 8);
+    const shield = new THREE.IcosahedronGeometry(1.15, 1);
+    const nitro = new THREE.OctahedronGeometry(1.05, 0);
+    nitro.scale(0.8, 1.4, 0.8);
+    const star = new THREE.DodecahedronGeometry(1.05, 0);
+    const clock = new THREE.TorusGeometry(0.95, 0.3, 10, 18);
+
     this.obstacleTemplates = {
       tree: { parts: [[foliage, flat(pal.tree)], [trunk, flat(pal.trunk)]], shadow: true },
       rock: { parts: [[rock, flat(pal.rock)]], shadow: true },
@@ -279,7 +289,12 @@ export class World {
       crystal: { parts: [[crystal, glow(pal.crystal, 1.2, { transparent: true, opacity: 0.92 })]], shadow: false },
       ring: { parts: [[ring, glow(pal.neon, 2.0)]], shadow: false },
       ramp: { parts: [[ramp, glow(pal.ice, 0.35, { roughness: 0.3 })]], shadow: true },
-      pad: { parts: [[pad, glow(pal.neon, 1.4)]], shadow: false }
+      pad: { parts: [[pad, glow(pal.neon, 1.4)]], shadow: false },
+      magnet: { parts: [[magnet, glow('#ff9d3c', 1.7)]], shadow: false, powerup: true },
+      shield: { parts: [[shield, glow('#5cd7ff', 1.5, { transparent: true, opacity: 0.72 })]], shadow: false, powerup: true },
+      nitro: { parts: [[nitro, glow('#ff5a2a', 1.9)]], shadow: false, powerup: true },
+      star: { parts: [[star, glow('#ffd166', 1.8)]], shadow: false, powerup: true },
+      clock: { parts: [[clock, glow('#b0f0a8', 1.6)]], shadow: false, powerup: true }
     };
     this.pulseMaterials = [
       this.obstacleTemplates.ring.parts[0][1],
@@ -467,7 +482,7 @@ export class World {
         def,
         height: OBSTACLE_HEIGHTS[o.type] || 4,
         consumed: false,
-        inst: null, instIndex: -1
+        inst: null, instIndex: -1, meshObj: null
       });
     }
     return out;
@@ -529,7 +544,9 @@ export class World {
       }
       if (chunk.obstacleMeshes) {
         const show = ring <= this.obstacleRadius;
-        for (const im of chunk.obstacleMeshes) im.visible = show;
+        for (const im of chunk.obstacleMeshes) {
+          im.visible = show && !im.userData.consumed;
+        }
       }
     }
 
@@ -537,6 +554,12 @@ export class World {
     if (this.pulseMaterials) {
       const pulse = 1.4 + Math.sin(this.timeU.value * 3.2) * 0.55;
       for (const m of this.pulseMaterials) m.emissiveIntensity = pulse;
+    }
+    for (const entry of this.powerupAnim) {
+      const m = entry.mesh;
+      if (!m.visible) continue;
+      m.rotation.y += dt * 2.1;
+      m.position.y = entry.ob.y + Math.sin(this.timeU.value * 2.3 + entry.phase) * 0.35;
     }
     if (this.sky && this.game.camera) this.sky.position.copy(this.game.camera.position);
 
@@ -605,6 +628,22 @@ export class World {
     for (const [type, list] of byType) {
       const tmpl = this.obstacleTemplates[type];
       if (!tmpl) continue;
+      if (tmpl.powerup) {
+        // Power-ups are few, so each gets its own mesh for spin/bob animation.
+        for (const ob of list) {
+          const group = new THREE.Group();
+          for (const [geo, mat] of tmpl.parts) group.add(new THREE.Mesh(geo, mat));
+          group.position.set(ob.x, ob.y, ob.z);
+          group.rotation.y = ob.rot;
+          group.scale.setScalar(ob.scale);
+          group.userData.consumed = false;
+          ob.meshObj = group;
+          this.group.add(group);
+          record.obstacleMeshes.push(group);
+          this.powerupAnim.add({ mesh: group, ob, phase: ob.rot * 10 });
+        }
+        continue;
+      }
       for (let p = 0; p < tmpl.parts.length; p++) {
         const [geo, mat] = tmpl.parts[p];
         const im = new THREE.InstancedMesh(geo, mat, list.length);
@@ -641,9 +680,13 @@ export class World {
     if (record.obstacleMeshes) {
       for (const im of record.obstacleMeshes) {
         this.group.remove(im);
-        im.dispose();
+        if (im.isInstancedMesh) im.dispose();
       }
       record.obstacleMeshes = null;
+      // Drop animation entries whose meshes were just detached.
+      for (const entry of this.powerupAnim) {
+        if (!entry.mesh.parent) this.powerupAnim.delete(entry);
+      }
     }
   }
 
@@ -721,6 +764,10 @@ export class World {
 
   consumeObstacle(ob) {
     ob.consumed = true;
+    if (ob.meshObj) {
+      ob.meshObj.visible = false;
+      ob.meshObj.userData.consumed = true;
+    }
     if (ob.inst && ob.instIndex >= 0) {
       _m1.makeScale(0.0001, 0.0001, 0.0001);
       for (const im of ob.inst) {

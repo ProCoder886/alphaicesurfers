@@ -5,14 +5,14 @@
   "rider": {
     "mass": 82,
     "radius": 0.55,
-    "maxSpeed": 46,
-    "tuckDragScale": 0.45,
+    "maxSpeed": 58,
+    "tuckDragScale": 0.34,
     "brakeFriction": 0.35,
     "turnSpeed": 2.7,
-    "turnSpeedAtMax": 1.5,
+    "turnSpeedAtMax": 1.6,
     "airYawRate": 4.1,
     "airPitchRate": 3.7,
-    "linearDrag": 0.0018,
+    "linearDrag": 0.0013,
     "carveScrub": 0.22,
     "jumpBase": 5.2,
     "jumpCharged": 4.6,
@@ -27,8 +27,8 @@
     "hardLandingSpeedKeep": 0.72
   },
   "surfaces": [
-    { "id": 0, "name": "Powder Snow",  "friction": 0.050, "grip": 9.0, "audio": "powder" },
-    { "id": 1, "name": "Packed Snow",  "friction": 0.026, "grip": 7.0, "audio": "packed" },
+    { "id": 0, "name": "Powder Snow",  "friction": 0.042, "grip": 9.0, "audio": "powder" },
+    { "id": 1, "name": "Packed Snow",  "friction": 0.021, "grip": 7.0, "audio": "packed" },
     { "id": 2, "name": "Blue Ice",     "friction": 0.009, "grip": 3.2, "audio": "ice" },
     { "id": 3, "name": "Black Ice",    "friction": 0.004, "grip": 2.1, "audio": "ice" },
     { "id": 4, "name": "Frozen Lake",  "friction": 0.006, "grip": 2.6, "audio": "ice" }

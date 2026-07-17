@@ -1,13 +1,13 @@
 {
   "title": "Alpha Ice Surfers 3D",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "modes": [
     {
       "id": "freeroam",
       "name": "Free Roam",
       "desc": "Explore the open mountain. No timers, no pressure — carve, jump and discover.",
       "icon": "🏔️",
-      "aiRiders": 2,
+      "aiRiders": 4,
       "checkpoints": 0,
       "timeLimit": 0,
       "scoring": true,
@@ -71,7 +71,7 @@
       "name": "Championship Race",
       "desc": "Race AI pros through the gates. First across the finish takes the podium.",
       "icon": "🏁",
-      "aiRiders": 5,
+      "aiRiders": 7,
       "checkpoints": 12,
       "timeLimit": 0,
       "scoring": false,

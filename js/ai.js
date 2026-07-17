@@ -14,14 +14,21 @@ import { createRiderBody, wrapAngle } from './physics.js';
 import { buildRider } from './player.js';
 import { corridorX, mulberry32 } from '../workers/terrainWorker.js';
 
-const AI_NAMES = ['Kira', 'Bjorn', 'Yuki', 'Sasha', 'Nanook', 'Elsa', 'Ragnar', 'Miko'];
+const AI_NAMES = [
+  'Kira', 'Bjorn', 'Yuki', 'Sasha', 'Nanook', 'Elsa', 'Ragnar', 'Miko',
+  'Freya', 'Otso', 'Anouk', 'Sven'
+];
 const AI_COLORS = [
   { suit: '#e2543a', accent: '#ffd166', board: '#ff5a2a', glow: '#ffc94a' },
   { suit: '#57d132', accent: '#1b1f24', board: '#37e6a0', glow: '#a9f8ff' },
   { suit: '#8b5cf6', accent: '#f0abfc', board: '#c86bff', glow: '#f0abfc' },
   { suit: '#1cc4b0', accent: '#ffffff', board: '#c0f0ff', glow: '#ffffff' },
   { suit: '#f43f5e', accent: '#0f172a', board: '#171a21', glow: '#ff4fd8' },
-  { suit: '#f59e0b', accent: '#3b82f6', board: '#00e5ff', glow: '#c86bff' }
+  { suit: '#f59e0b', accent: '#3b82f6', board: '#00e5ff', glow: '#c86bff' },
+  { suit: '#3b82f6', accent: '#facc15', board: '#ffd166', glow: '#fff3b0' },
+  { suit: '#0ea5a3', accent: '#ff9d3c', board: '#0f766e', glow: '#5eead4' },
+  { suit: '#a3e635', accent: '#14532d', board: '#65a30d', glow: '#d9f99d' },
+  { suit: '#e879f9', accent: '#1e1b4b', board: '#701a75', glow: '#f5d0fe' }
 ];
 
 function makeNameSprite(name, color) {

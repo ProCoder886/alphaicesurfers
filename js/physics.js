@@ -131,10 +131,12 @@ export class PhysicsEngine {
       // --- friction & braking ---
       let mu = surf.friction;
       if (input.brake) mu += cfg.brakeFriction;
+      // Friction grows only mildly with speed so downhill runs keep building
+      // pace — top-end is governed by aero drag and maxSpeed instead.
       const fr = mu * g * Math.max(0.2, _n.y) * dt;
       const sp2 = body.vel.length();
       if (sp2 > 0.001) {
-        const newSpeed = Math.max(0, sp2 - fr * (1 + sp2 * 0.06));
+        const newSpeed = Math.max(0, sp2 - fr * (1 + sp2 * 0.018));
         body.vel.multiplyScalar(newSpeed / sp2);
       }
 

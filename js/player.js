@@ -186,6 +186,10 @@ export class Player {
     this.safeTimer = 0;
     this.rampCooldowns = new Map();
 
+    // Active power-up timers (seconds remaining).
+    this.effects = { magnet: 0, shield: 0, nitro: 0, multiplier: 0 };
+    this.shieldMesh = null;
+
     // Ghost recording
     this.recording = [];
     this.recordTimer = 0;
@@ -207,6 +211,18 @@ export class Player {
     this.refs = refs;
     this.game.scene.add(this.mesh);
     this.spray = new SprayEmitter(this.game.scene, '#eef4ff');
+
+    // Shield bubble shown while the Ice Shield power-up is active.
+    this.shieldMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 18, 12),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color('#5cd7ff'), transparent: true, opacity: 0.16,
+        depthWrite: false, side: THREE.DoubleSide
+      })
+    );
+    this.shieldMesh.position.y = 0.9;
+    this.shieldMesh.visible = false;
+    this.mesh.add(this.shieldMesh);
   }
 
   disposeMesh() {
@@ -240,6 +256,10 @@ export class Player {
     this.recording = [];
     this.recordTimer = 0;
     this.lastSafe = { x, z, heading };
+    this.effects.magnet = 0;
+    this.effects.shield = 0;
+    this.effects.nitro = 0;
+    this.effects.multiplier = 0;
     if (this.mesh) {
       this.mesh.position.copy(b.pos);
       this.mesh.rotation.set(0, heading, 0);
@@ -296,11 +316,18 @@ export class Player {
       this.jumpCharge = 0;
     }
 
-    // --- boost ---
+    // --- power-up timers ---
+    for (const k of Object.keys(this.effects)) {
+      if (this.effects[k] > 0) this.effects[k] = Math.max(0, this.effects[k] - dt);
+    }
+
+    // --- boost (nitro power-up boosts for free) ---
     const boostCfg = game.config.gameplay.boost;
     const session = game.session;
     this.boosting = false;
-    if (input.isDown('boost') && session && session.boost > 1 && b.grounded) {
+    if (this.effects.nitro > 0 && b.grounded) {
+      this.boosting = true;
+    } else if (input.isDown('boost') && session && session.boost > 1 && b.grounded) {
       this.boosting = true;
       session.boost = Math.max(0, session.boost - boostCfg.drainPerSecond * dt);
     }
@@ -357,6 +384,14 @@ export class Player {
 
     // --- triggers ---
     for (const ob of events.triggers) this.handleTrigger(ob, dt);
+
+    // --- crystal magnet: hoover nearby crystals ---
+    if (this.effects.magnet > 0) {
+      const near = game.world.obstaclesNear(b.pos.x, b.pos.z, 12);
+      for (const ob of near) {
+        if (ob.type === 'crystal' && !ob.consumed) this.handleTrigger(ob, dt);
+      }
+    }
 
     // --- combo timer ---
     if (this.comboTimer > 0) {
@@ -560,12 +595,32 @@ export class Player {
         }
         break;
       }
+      case 'powerup': {
+        game.world.consumeObstacle(ob);
+        const power = ob.def.power;
+        if (power === 'time') {
+          if (game.mode && game.mode.timeLimit > 0 && game.session) {
+            game.session.timeLeft += ob.def.amount;
+          } else {
+            this.addScore(500, 'Time Bonus');
+          }
+        } else if (power === 'nitro') {
+          this.effects.nitro = ob.def.duration;
+          if (game.session) game.session.boost = boostCfg.max;
+        } else {
+          this.effects[power] = ob.def.duration;
+        }
+        this.addScore(ob.def.points, ob.def.name);
+        game.bus.emit('powerup', { power, name: ob.def.name, duration: ob.def.duration || 0 });
+        break;
+      }
     }
   }
 
   addScore(points, label) {
     const game = this.game;
     if (!game.session || !game.mode || !game.mode.scoring) return;
+    if (this.effects.multiplier > 0) points *= 2;
     game.session.trickScore += points;
     game.bus.emit('score', { points, label, total: game.session.trickScore });
   }
@@ -579,6 +634,13 @@ export class Player {
   crash(reason) {
     const game = this.game;
     if (this.crashTimer > 0) return;
+    // The Ice Shield eats one crash (avalanche excepted — nothing stops that).
+    if (this.effects.shield > 0 && reason !== 'avalanche') {
+      this.effects.shield = 0;
+      this.body.vel.multiplyScalar(0.8);
+      game.bus.emit('shield-save', {});
+      return;
+    }
     this.crashTimer = game.config.physics.rider.crashRecoveryTime;
     this.body.vel.multiplyScalar(0.35);
     this.tumbleSpin.set(
@@ -654,6 +716,18 @@ export class Player {
       refs.armL.rotation.z += ((grabbing ? 2.4 : 0.9) - refs.armL.rotation.z) * Math.min(1, dt * 10);
       refs.armR.rotation.z += ((grabbing ? -0.2 : -0.9) - refs.armR.rotation.z) * Math.min(1, dt * 10);
       refs.body.position.y += ((grabbing ? -0.12 : 0.06) - refs.body.position.y) * Math.min(1, dt * 10);
+    }
+
+    // Shield bubble pulse.
+    if (this.shieldMesh) {
+      const active = this.effects.shield > 0;
+      this.shieldMesh.visible = active;
+      if (active) {
+        const t = this.game.elapsed;
+        this.shieldMesh.material.opacity = 0.12 + Math.sin(t * 5) * 0.05
+          + (this.effects.shield < 3 ? Math.sin(t * 18) * 0.08 : 0);
+        this.shieldMesh.scale.setScalar(1 + Math.sin(t * 3) * 0.05);
+      }
     }
 
     if (this.spray) this.spray.update(dt);

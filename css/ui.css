@@ -490,6 +490,28 @@
   box-shadow: 0 0 14px rgba(55, 182, 255, 0.9);
 }
 
+.hud-powerups {
+  bottom: max(3vh, 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.powerup-chip {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  background: var(--c-panel);
+  border: 1px solid rgba(255, 209, 102, 0.55);
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.35);
+  white-space: nowrap;
+}
+
+.powerup-chip.expiring { animation: pulse 0.5s ease infinite; }
+
+.trick-toast.powerup { color: #ffb35c; }
+
 .hud-center {
   inset: 0;
   display: flex;

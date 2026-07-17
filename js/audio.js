@@ -188,6 +188,8 @@ export class AudioManager {
     bus.on('collect', () => this.chime([0, 12], 880, 0.04, 0.14));
     bus.on('ring', () => this.chime([0, 5, 12], 520, 0.05, 0.18));
     bus.on('bounce', () => this.blip(220, 0.25, 'sine', 0.3, 340));
+    bus.on('powerup', () => this.chime([0, 7, 12, 19], 620, 0.05, 0.2));
+    bus.on('shield-save', () => this.chime([12, 5, 0], 440, 0.07, 0.22));
     bus.on('ramp', () => this.noiseBurst(0.25, 900, 1, 0.2, 'highpass'));
     bus.on('checkpoint', () => this.chime([0, 4, 7, 12], 540, 0.06, 0.2));
     bus.on('countdown', (e) => this.blip(e.n === 0 ? 880 : 440, 0.18, 'square', 0.15));

@@ -10,6 +10,49 @@
   #rotate-overlay { display: flex; }
 }
 
+/* ---------------- touch ergonomics ---------------- */
+
+@media (pointer: coarse) {
+  /* Comfortable tap targets everywhere (44px+ per platform guidelines). */
+  .btn { min-height: 46px; }
+  .btn-small { min-height: 40px; }
+  .card { min-height: 48px; padding: 0.7rem 1rem; }
+  .tab { padding: 0.6rem 1.1rem; min-height: 40px; }
+  .setting-row { min-height: 44px; }
+  .setting-row input[type="range"] { height: 34px; flex: 1; max-width: 55%; }
+  .setting-row input[type="checkbox"] { width: 26px; height: 26px; }
+  .setting-row select { min-height: 40px; }
+
+  /* No hover states on touch — keep selected/active feedback only. */
+  .btn:hover:not(:disabled) { transform: none; box-shadow: none; }
+  .card:hover:not(.locked) { transform: none; }
+
+  /* Keep toasts and power-up chips clear of the thumb zones. */
+  #toasts { bottom: 20vh; }
+  .hud-powerups { bottom: max(16vh, 80px); }
+
+  /* Rearrange the HUD around the touch controls:
+     speed moves to bottom-centre (the stick owns bottom-left),
+     the boost bar rises above the JUMP cluster,
+     and the top buttons sit left of the centred score. */
+  .hud-bottomleft {
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  .hud-bottomleft .hud-speed { font-size: 2rem; }
+  .hud-bottomleft .hud-alt { font-size: 0.7rem; margin-top: 0.1rem; }
+  /* #hud id keeps this winning over the short-screen "bottom: 8px" rule. */
+  #hud .hud-bottomright { bottom: calc(12vh + 104px); }
+  .boost-bar { width: 130px; height: 10px; }
+  .touch-top { left: 34%; transform: none; }
+  #minimap { width: 108px; height: 108px; }
+  .hud-timer { font-size: 1.5rem; }
+  .hud-score { font-size: 1.3rem; }
+  .hud-weather { font-size: 0.68rem; }
+}
+
 /* ---------------- compact layouts ---------------- */
 
 @media (max-width: 900px) {
@@ -37,17 +80,48 @@
   .results-row { font-size: 0.85rem; gap: 1rem; }
 }
 
-/* Short landscape phones: tighten vertical chrome. */
+/* Short landscape phones: tighten vertical chrome, spread menus wide. */
 @media (max-height: 420px) {
   .hud-topleft, .hud-topright, .hud-topcenter { top: 6px; }
   .hud-bottomleft, .hud-bottomright { bottom: 8px; }
+  .hud-powerups { bottom: 96px; }
   .touch-stick { bottom: 8vh; width: 100px; height: 100px; }
   .touch-buttons { bottom: 7vh; }
-  .touch-btn { width: 54px; height: 54px; }
-  .touch-btn-big { width: 70px; height: 70px; }
+  .touch-btn { width: 56px; height: 56px; }
+  .touch-btn-big { width: 72px; height: 72px; }
   .screen { padding: 8px 12px; }
   .menu-header { margin-top: 0.5vh; }
   .game-title { font-size: 1.4rem; }
+  .game-subtitle { display: none; }
+
+  /* Two-column menu so everything fits a phone held sideways. */
+  .menu-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(560px, 92vw);
+    gap: 0.45rem;
+  }
+  .menu-nav .btn-big { grid-column: 1 / -1; text-align: center; }
+  .player-card { width: min(560px, 92vw); }
+  .menu-footer { padding-top: 1vh; }
+  .pause-panel, .results-panel { max-height: 92vh; padding: 0.9rem 1.2rem; gap: 0.5rem; }
+  .results-medal .medal-big { font-size: 2rem; }
+  .settings-body { gap: 0.5rem; }
+
+  /* Ride setup: two columns + a compact summary bar so START is reachable. */
+  .ride-layout { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .ride-col h3 { margin-bottom: 0.3rem; }
+  .card-list { max-height: 34vh; }
+  .ride-summary {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem;
+  }
+  .ride-summary p { display: none; }
+  .ride-summary #btn-start { margin-left: auto; }
 }
 
 /* Large desktop: give menus more air. */

@@ -1,14 +1,134 @@
 {
   "types": [
-    { "id": "tree",    "kind": "solid",   "radius": 1.1, "baseDensity": 9,  "minSlopeClear": 0.85, "points": 0 },
-    { "id": "rock",    "kind": "solid",   "radius": 1.6, "baseDensity": 4,  "minSlopeClear": 0.0,  "points": 0 },
-    { "id": "spike",   "kind": "solid",   "radius": 1.0, "baseDensity": 3,  "minSlopeClear": 0.0,  "points": 0 },
-    { "id": "tower",   "kind": "solid",   "radius": 4.5, "baseDensity": 2,  "minSlopeClear": 0.0,  "points": 0, "cityOnly": true },
-    { "id": "crystal", "kind": "trigger", "radius": 2.0, "baseDensity": 5,  "points": 150, "effect": "collect" },
-    { "id": "ring",    "kind": "trigger", "radius": 3.4, "baseDensity": 1.6, "points": 300, "effect": "boostRing", "hover": 5.5 },
-    { "id": "ramp",    "kind": "trigger", "radius": 3.0, "baseDensity": 1.8, "points": 0,   "effect": "ramp", "kick": 0.34 },
-    { "id": "pad",     "kind": "trigger", "radius": 2.2, "baseDensity": 1.2, "points": 100, "effect": "bounce", "bounce": 13 }
+    {
+      "id": "tree",
+      "kind": "solid",
+      "radius": 1.1,
+      "baseDensity": 9,
+      "minSlopeClear": 0.85,
+      "points": 0
+    },
+    {
+      "id": "rock",
+      "kind": "solid",
+      "radius": 1.6,
+      "baseDensity": 4,
+      "minSlopeClear": 0.0,
+      "points": 0
+    },
+    {
+      "id": "spike",
+      "kind": "solid",
+      "radius": 1.0,
+      "baseDensity": 3,
+      "minSlopeClear": 0.0,
+      "points": 0
+    },
+    {
+      "id": "tower",
+      "kind": "solid",
+      "radius": 4.5,
+      "baseDensity": 2,
+      "minSlopeClear": 0.0,
+      "points": 0,
+      "cityOnly": true
+    },
+    {
+      "id": "crystal",
+      "kind": "trigger",
+      "radius": 2.0,
+      "baseDensity": 5,
+      "points": 150,
+      "effect": "collect"
+    },
+    {
+      "id": "ring",
+      "kind": "trigger",
+      "radius": 3.4,
+      "baseDensity": 1.6,
+      "points": 300,
+      "effect": "boostRing",
+      "hover": 5.5
+    },
+    {
+      "id": "ramp",
+      "kind": "trigger",
+      "radius": 3.0,
+      "baseDensity": 1.8,
+      "points": 0,
+      "effect": "ramp",
+      "kick": 0.34
+    },
+    {
+      "id": "pad",
+      "kind": "trigger",
+      "radius": 2.2,
+      "baseDensity": 1.2,
+      "points": 100,
+      "effect": "bounce",
+      "bounce": 13
+    },
+    {
+      "id": "magnet",
+      "kind": "trigger",
+      "radius": 2.3,
+      "baseDensity": 0.8,
+      "points": 100,
+      "effect": "powerup",
+      "power": "magnet",
+      "duration": 12,
+      "hover": 1.5,
+      "name": "Crystal Magnet"
+    },
+    {
+      "id": "shield",
+      "kind": "trigger",
+      "radius": 2.3,
+      "baseDensity": 0.8,
+      "points": 100,
+      "effect": "powerup",
+      "power": "shield",
+      "duration": 20,
+      "hover": 1.5,
+      "name": "Ice Shield"
+    },
+    {
+      "id": "nitro",
+      "kind": "trigger",
+      "radius": 2.3,
+      "baseDensity": 0.9,
+      "points": 100,
+      "effect": "powerup",
+      "power": "nitro",
+      "duration": 4,
+      "hover": 1.5,
+      "name": "Nitro Surge"
+    },
+    {
+      "id": "star",
+      "kind": "trigger",
+      "radius": 2.3,
+      "baseDensity": 0.8,
+      "points": 100,
+      "effect": "powerup",
+      "power": "multiplier",
+      "duration": 15,
+      "hover": 1.5,
+      "name": "Score x2"
+    },
+    {
+      "id": "clock",
+      "kind": "trigger",
+      "radius": 2.3,
+      "baseDensity": 0.8,
+      "points": 100,
+      "effect": "powerup",
+      "power": "time",
+      "amount": 10,
+      "hover": 1.5,
+      "name": "Time Extend"
+    }
   ],
-  "corridorClearance": 7,
+  "corridorClearance": 13,
   "spawnClearRadius": 26
 }

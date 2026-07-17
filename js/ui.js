@@ -25,6 +25,7 @@ function fmtInt(n) {
 }
 
 const MEDAL_ICONS = { gold: '🥇', silver: '🥈', bronze: '🥉' };
+const POWERUP_ICONS = { magnet: '🧲', shield: '🛡️', nitro: '🔥', multiplier: '✖️2', time: '⏳' };
 
 export class UIManager {
   constructor(game) {
@@ -122,7 +123,7 @@ export class UIManager {
       </nav>
       <footer class="menu-footer">
         <button class="btn btn-small" id="btn-fullscreen">⛶ Fullscreen</button>
-        <span class="version">v1.0.0 · WebGL2</span>
+        <span class="version">v1.1.0 · WebGL2</span>
       </footer>`;
     this.addScreen('main', s);
 
@@ -561,6 +562,10 @@ export class UIManager {
         <p class="help-tip">💡 Land clean for <b>Perfect Landing</b> bonuses. Ice is fast but slippery —
         powder snow grips. Chain tricks quickly to grow your combo multiplier, and thread the
         glowing rings for boost.</p>
+        <p class="help-tip">✨ Grab the floating power-ups on the racing line:
+        🧲 <b>Crystal Magnet</b> hoovers crystals, 🛡️ <b>Ice Shield</b> eats one crash,
+        🔥 <b>Nitro Surge</b> is free full boost, ✖️2 <b>Score Star</b> doubles points and
+        ⏳ <b>Time Extend</b> adds seconds in timed modes.</p>
       </div>`;
     this.addScreen('help', s);
     s.querySelector('[data-back]').addEventListener('click', () => {
@@ -679,6 +684,7 @@ export class UIManager {
         <div class="boost-label">BOOST</div>
         <div class="boost-bar"><div class="boost-bar-fill" id="hud-boost"></div></div>
       </div>
+      <div class="hud-powerups" id="hud-powerups"></div>
       <div class="hud-center">
         <div class="hud-countdown hidden" id="hud-countdown"></div>
         <div class="hud-tricks" id="hud-tricks"></div>
@@ -737,7 +743,10 @@ export class UIManager {
       'Spin with A/D in the air. Flip with W/S.',
       'Thread the glowing rings for a huge boost.',
       'Grabs (hold E) multiply your air-time points.',
-      'Brake before hairpins — carving scrubs speed.'
+      'Brake before hairpins — carving scrubs speed.',
+      'A 🛡️ shield eats one crash. Spend it on a risky line.',
+      'The 🧲 magnet hoovers every crystal near the racing line.',
+      'Stack ✖️2 with a big combo for absurd scores.'
     ];
     this.el.sessionLoading.querySelector('#sl-title').textContent = `${mode.name} · ${map.name}`;
     this.el.sessionLoading.querySelector('#sl-desc').textContent = map.desc;
@@ -768,6 +777,7 @@ export class UIManager {
       </div>
       <div class="touch-top">
         <button class="touch-btn touch-btn-small" id="tb-cam">🎥</button>
+        <button class="touch-btn touch-btn-small" id="tb-fs">⛶</button>
         <button class="touch-btn touch-btn-small" id="tb-pause">⏸</button>
       </div>`;
     this.root.appendChild(t);
@@ -818,6 +828,7 @@ export class UIManager {
     bindBtn('#tb-boost', 'boost');
     bindBtn('#tb-grab', 'grab');
     t.querySelector('#tb-cam').addEventListener('click', () => this.game.bus.emit('action', { action: 'camera' }));
+    t.querySelector('#tb-fs').addEventListener('click', () => this.requestFullscreen());
     t.querySelector('#tb-pause').addEventListener('click', () => this.game.bus.emit('action', { action: 'pause' }));
   }
 
@@ -844,6 +855,8 @@ export class UIManager {
     });
     bus.on('collect', () => { /* subtle — score popup handles it */ });
     bus.on('ring', () => this.trickToast('BOOST RING!', 'ring'));
+    bus.on('powerup', (e) => this.trickToast(`${POWERUP_ICONS[e.power] || '✨'} ${e.name.toUpperCase()}!`, 'powerup'));
+    bus.on('shield-save', () => this.trickToast('🛡️ SHIELD SAVED YOU!', 'perfect'));
     bus.on('countdown', (e) => {
       const cd = this.el.hud.querySelector('#hud-countdown');
       cd.classList.remove('hidden');
@@ -961,6 +974,20 @@ export class UIManager {
     this.el.hud.querySelector('#speedlines').classList.toggle('active',
       player.boosting || player.speedKmh > 110);
 
+    // Active power-up indicators.
+    const fx = player.effects;
+    let puHtml = '';
+    for (const [key, icon] of Object.entries(POWERUP_ICONS)) {
+      if (key === 'time') continue;
+      if (fx[key] > 0) {
+        puHtml += `<span class="powerup-chip${fx[key] < 3 ? ' expiring' : ''}">${icon} ${Math.ceil(fx[key])}s</span>`;
+      }
+    }
+    if (puHtml !== this.lastPowerupHtml) {
+      this.lastPowerupHtml = puHtml;
+      this.el.hud.querySelector('#hud-powerups').innerHTML = puHtml;
+    }
+
     // Minimap (4x/sec).
     this.minimapTimer -= dt;
     if (this.minimapTimer <= 0) {
@@ -977,8 +1004,9 @@ export class UIManager {
     const size = 150, half = size / 2;
     const range = 260; // metres shown across the map
     const px = player.body.pos.x, pz = player.body.pos.z;
+    // Screen-right is world -X (camera faces +Z), so mirror X to match.
     const toMap = (x, z) => [
-      half + ((x - px) / range) * size,
+      half - ((x - px) / range) * size,
       half - ((z - pz) / range) * size
     ];
 

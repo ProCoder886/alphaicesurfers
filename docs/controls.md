@@ -60,3 +60,6 @@ up/down, `SHIFT` to fly faster, **Capture** saves a PNG.
   4 s of the last one, and dies with a crash.
 - **Thread the rings, hit the pads.** Boost rings refill a third of the meter;
   bounce pads launch you into flip territory.
+- **Grab the floating power-ups.** 🧲 Crystal Magnet auto-collects nearby
+  crystals, 🛡️ Ice Shield absorbs one crash, 🔥 Nitro Surge is free full
+  boost, ✖️2 doubles all points and ⏳ adds time in timed modes.

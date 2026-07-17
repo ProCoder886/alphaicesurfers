@@ -184,9 +184,12 @@ export class InputManager {
 
   update(dt) {
     // Keyboard digital -> analog smoothing.
+    // NOTE on signs: the chase camera looks down +Z (downhill), which makes
+    // screen-right equal world -X. Positive steer increases heading (turns
+    // toward world +X = screen LEFT), so "left" inputs map to +1 here.
     let steerTarget = 0;
-    if (this.actionKeyDown('steerLeft')) steerTarget -= 1;
-    if (this.actionKeyDown('steerRight')) steerTarget += 1;
+    if (this.actionKeyDown('steerLeft')) steerTarget += 1;
+    if (this.actionKeyDown('steerRight')) steerTarget -= 1;
     let pitchTarget = 0;
     if (this.actionKeyDown('tuck')) pitchTarget += 1;
     if (this.actionKeyDown('brake')) pitchTarget -= 1;
@@ -194,7 +197,7 @@ export class InputManager {
     const gp = this.gamepad();
     if (gp) {
       const gx = gp.axes[0] || 0, gy = gp.axes[1] || 0;
-      if (Math.abs(gx) > 0.12) steerTarget += gx;
+      if (Math.abs(gx) > 0.12) steerTarget -= gx;
       if (Math.abs(gy) > 0.15) pitchTarget += -gy;
       // Edge-triggered gamepad buttons: 9 = start (pause), 3 = Y (camera).
       const edges = { 9: 'pause', 3: 'camera' };
@@ -205,7 +208,8 @@ export class InputManager {
       }
     }
 
-    steerTarget = THREE.MathUtils.clamp(steerTarget + this.touchAxes.steer, -1, 1);
+    // Touch stick reports screen-space dx (right = +), so it flips too.
+    steerTarget = THREE.MathUtils.clamp(steerTarget - this.touchAxes.steer, -1, 1);
     pitchTarget = THREE.MathUtils.clamp(pitchTarget + this.touchAxes.pitch, -1, 1);
 
     const rate = Math.min(1, dt * 7);
@@ -293,6 +297,9 @@ export class Game {
     this.qualityLevel = 'medium';
     this.quality = { ...QUALITY_PRESETS.medium };
     this.lastFrame = performance.now();
+    // Coarse-pointer devices get mobile-tuned rendering defaults.
+    this.isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+      && window.matchMedia('(pointer: coarse)').matches;
   }
 
   async init() {
@@ -334,7 +341,9 @@ export class Game {
     this.ui.build();
 
     const pref = this.save.profile.settings.quality;
-    this.applyQuality(pref === 'auto' ? 'medium' : pref, true);
+    // Phones/tablets start one notch lower in auto mode; the profiler can
+    // still upgrade them if the device proves fast.
+    this.applyQuality(pref === 'auto' ? (this.isMobile ? 'low' : 'medium') : pref, true);
 
     this.bindGlobalEvents();
     this.resize();
@@ -371,6 +380,13 @@ export class Game {
     this.qualityLevel = level;
     this.quality = { ...QUALITY_PRESETS[level] };
     const q = this.quality;
+    if (this.isMobile) {
+      // High-DPI phone screens burn fill-rate fast; cap resolution and
+      // shadow cost so battery and frame rate hold up.
+      q.pixelRatio = Math.min(q.pixelRatio, 1.6);
+      q.shadowMap = Math.min(q.shadowMap, 2048);
+      q.snowParticles = Math.round(q.snowParticles * 0.6);
+    }
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q.pixelRatio));
     this.renderer.shadowMap.enabled = q.shadows;
     this.world.viewRadius = q.viewRadius;
