@@ -29,7 +29,20 @@
 
   /* Keep toasts and power-up chips clear of the thumb zones. */
   #toasts { bottom: 20vh; }
-  .hud-powerups { bottom: max(16vh, 80px); }
+  .hud-powerups { bottom: max(24vh, 120px); }
+
+  /* Powers: a vertical rail on the left edge, compact icon + key chips. */
+  .hud-hint { display: none; }
+  .hud-powerbar {
+    left: 8px;
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .power-chip { width: 54px; padding: 0.35rem 0.1rem; }
+  .pc-name { display: none; }
 
   /* Rearrange the HUD around the touch controls:
      speed moves to bottom-centre (the stick owns bottom-left),

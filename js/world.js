@@ -22,7 +22,10 @@ const _m1 = new THREE.Matrix4();
 const _q1 = new THREE.Quaternion();
 const _s1 = new THREE.Vector3();
 
-const OBSTACLE_HEIGHTS = { tree: 5, rock: 2.2, spike: 3.2, tower: 40 };
+const OBSTACLE_HEIGHTS = {
+  tree: 5, rock: 2.2, spike: 3.2, tower: 40,
+  icefang: 2.6, iceridge: 1.5, boulder: 3.0
+};
 
 export class World {
   constructor(game) {
@@ -92,9 +95,27 @@ export class World {
 
   /* ================= map lifecycle ================= */
 
-  loadMap(mapDef) {
+  /**
+   * @param {object} mapDef   entry from maps.json
+   * @param {object} [skyTheme] optional random sky override {top, horizon, fog}
+   */
+  loadMap(mapDef, skyTheme) {
     this.disposeMap();
-    this.map = mapDef;
+    // A fresh sky palette every run: clone the map and recolor the sky keys
+    // so every downstream consumer (sky shader, fog, env map, weather,
+    // hemisphere light) picks the theme up automatically.
+    this.map = skyTheme
+      ? {
+        ...mapDef,
+        palette: {
+          ...mapDef.palette,
+          skyTop: skyTheme.top,
+          skyHorizon: skyTheme.horizon,
+          fog: skyTheme.fog
+        }
+      }
+      : mapDef;
+    mapDef = this.map;
     this.generator = new TerrainGenerator(mapDef.seed, mapDef.terrain);
     this.group = new THREE.Group();
     this.group.name = `map:${mapDef.id}`;
@@ -281,6 +302,21 @@ export class World {
     const star = new THREE.DodecahedronGeometry(1.05, 0);
     const clock = new THREE.TorusGeometry(0.95, 0.3, 10, 18);
 
+    // On-path ice hazards.
+    const fangA = new THREE.ConeGeometry(0.7, 2.8, 5);
+    fangA.translate(0, 1.3, 0);
+    const fangB = new THREE.ConeGeometry(0.5, 1.9, 5);
+    fangB.translate(0.9, 0.9, 0.3);
+    fangB.rotateZ(-0.16);
+    const fangC = new THREE.ConeGeometry(0.45, 1.5, 5);
+    fangC.translate(-0.8, 0.7, -0.35);
+    fangC.rotateZ(0.14);
+    const iceridge = new THREE.BoxGeometry(7.2, 1.3, 1.7);
+    iceridge.translate(0, 0.6, 0);
+    const boulder = new THREE.IcosahedronGeometry(2.1, 0);
+    boulder.translate(0, 1.3, 0);
+    const archGeo = new THREE.TorusGeometry(4.2, 0.65, 8, 22);
+
     this.obstacleTemplates = {
       tree: { parts: [[foliage, flat(pal.tree)], [trunk, flat(pal.trunk)]], shadow: true },
       rock: { parts: [[rock, flat(pal.rock)]], shadow: true },
@@ -294,7 +330,16 @@ export class World {
       shield: { parts: [[shield, glow('#5cd7ff', 1.5, { transparent: true, opacity: 0.72 })]], shadow: false, powerup: true },
       nitro: { parts: [[nitro, glow('#ff5a2a', 1.9)]], shadow: false, powerup: true },
       star: { parts: [[star, glow('#ffd166', 1.8)]], shadow: false, powerup: true },
-      clock: { parts: [[clock, glow('#b0f0a8', 1.6)]], shadow: false, powerup: true }
+      clock: { parts: [[clock, glow('#b0f0a8', 1.6)]], shadow: false, powerup: true },
+      icefang: {
+        parts: [[fangA, glow(pal.ice, 0.45, { roughness: 0.15, metalness: 0.5, transparent: true, opacity: 0.95 })],
+                [fangB, glow(pal.ice, 0.35, { roughness: 0.15, metalness: 0.5 })],
+                [fangC, glow(pal.ice, 0.3, { roughness: 0.2, metalness: 0.4 })]],
+        shadow: true
+      },
+      iceridge: { parts: [[iceridge, glow(pal.ice, 0.4, { roughness: 0.12, metalness: 0.55, transparent: true, opacity: 0.9 })]], shadow: true },
+      boulder: { parts: [[boulder, glow(pal.ice, 0.25, { roughness: 0.25, metalness: 0.45 })]], shadow: true },
+      icearch: { parts: [[archGeo, glow(pal.crystal, 1.1, { roughness: 0.2, metalness: 0.3 })]], shadow: false }
     };
     this.pulseMaterials = [
       this.obstacleTemplates.ring.parts[0][1],
@@ -517,6 +562,9 @@ export class World {
         }
       }
     }
+    // The run always heads downhill (+Z): pre-build an extra column ahead
+    // so the world instantiates in front of fast riders, never under them.
+    for (let dx = -1; dx <= 1; dx++) this.requestChunk(ccx + dx, ccz + R + 1);
 
     // Build up to 2 chunk meshes per frame to avoid frame spikes.
     let built = 0;

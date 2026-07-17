@@ -190,6 +190,9 @@ export class Player {
     this.effects = { magnet: 0, shield: 0, nitro: 0, multiplier: 0 };
     this.shieldMesh = null;
 
+    // Activatable powers (keys 1-5): id -> cooldown seconds remaining.
+    this.powerCooldowns = {};
+
     // Ghost recording
     this.recording = [];
     this.recordTimer = 0;
@@ -260,6 +263,7 @@ export class Player {
     this.effects.shield = 0;
     this.effects.nitro = 0;
     this.effects.multiplier = 0;
+    this.powerCooldowns = {};
     if (this.mesh) {
       this.mesh.position.copy(b.pos);
       this.mesh.rotation.set(0, heading, 0);
@@ -316,9 +320,14 @@ export class Player {
       this.jumpCharge = 0;
     }
 
-    // --- power-up timers ---
+    // --- power-up timers & power cooldowns ---
     for (const k of Object.keys(this.effects)) {
       if (this.effects[k] > 0) this.effects[k] = Math.max(0, this.effects[k] - dt);
+    }
+    for (const k of Object.keys(this.powerCooldowns)) {
+      if (this.powerCooldowns[k] > 0) {
+        this.powerCooldowns[k] = Math.max(0, this.powerCooldowns[k] - dt);
+      }
     }
 
     // --- boost (nitro power-up boosts for free) ---
@@ -595,6 +604,12 @@ export class Player {
         }
         break;
       }
+      case 'arch':
+        game.world.consumeObstacle(ob);
+        this.addScore(ob.def.points, 'Ice Arch');
+        this.addBoost(10);
+        game.bus.emit('arch', {});
+        break;
       case 'powerup': {
         game.world.consumeObstacle(ob);
         const power = ob.def.power;
@@ -615,6 +630,49 @@ export class Player {
         break;
       }
     }
+  }
+
+  /**
+   * Activate a keyed power (1-5). Powers are always available on cooldown —
+   * they are the rider's "special features", independent of world pickups.
+   */
+  activatePower(slot) {
+    const game = this.game;
+    const def = (game.config.gameplay.powers || []).find((p) => p.slot === slot);
+    if (!def || this.crashTimer > 0 || !game.session) return;
+    if ((this.powerCooldowns[def.id] || 0) > 0) {
+      game.bus.emit('power-denied', def);
+      return;
+    }
+    const b = this.body;
+    switch (def.id) {
+      case 'nitro':
+        this.effects.nitro = def.duration;
+        break;
+      case 'leap':
+        // Works on the ground AND mid-air (double jump).
+        b.vel.y = Math.max(b.vel.y, 0) + 10.5;
+        if (b.grounded) {
+          b.grounded = false;
+          b.airTime = 0;
+          this.spinAccum = 0; this.flipAccum = 0; this.grabTime = 0;
+        }
+        game.save.recordStat('jumps', 1);
+        break;
+      case 'shield':
+        this.effects.shield = def.duration;
+        break;
+      case 'slowmo':
+        game.setTimeScale(0.45, def.duration);
+        break;
+      case 'magnet':
+        this.effects.magnet = def.duration;
+        break;
+      default:
+        return;
+    }
+    this.powerCooldowns[def.id] = def.cooldown;
+    game.bus.emit('power-used', def);
   }
 
   addScore(points, label) {

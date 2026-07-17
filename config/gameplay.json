@@ -1,6 +1,6 @@
 {
   "title": "Alpha Ice Surfers 3D",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "modes": [
     {
       "id": "freeroam",
@@ -116,6 +116,13 @@
     "positionLerp": 5.0,
     "shakeSpeedThreshold": 24
   },
+  "powers": [
+    { "slot": 1, "id": "nitro",  "name": "Nitro Burst",  "icon": "🔥", "cooldown": 8,  "duration": 2.5 },
+    { "slot": 2, "id": "leap",   "name": "Super Jump",   "icon": "🚀", "cooldown": 10 },
+    { "slot": 3, "id": "shield", "name": "Ice Shield",   "icon": "🛡️", "cooldown": 24, "duration": 6 },
+    { "slot": 4, "id": "slowmo", "name": "Time Warp",    "icon": "⏳", "cooldown": 20, "duration": 3 },
+    { "slot": 5, "id": "magnet", "name": "Magnet Pulse", "icon": "🧲", "cooldown": 18, "duration": 8 }
+  ],
   "boost": {
     "max": 100,
     "drainPerSecond": 34,

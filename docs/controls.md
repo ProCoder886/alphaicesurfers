@@ -14,6 +14,7 @@ there. Defaults:
 | `SPACE` | Hold to charge, release to jump | — |
 | `SHIFT` | Boost (drains the boost meter) | — |
 | `E` / `K` | — | Grab (hold; adds style points) |
+| `1`–`5` | Powers: 1 Nitro Burst · 2 Super Jump · 3 Ice Shield · 4 Time Warp · 5 Magnet Pulse | |
 | `C` | Cycle camera (follow → first-person → drone) | |
 | `P` | Toggle photo mode | |
 | `R` | Respawn at the last safe point | |

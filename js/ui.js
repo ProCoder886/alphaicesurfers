@@ -123,7 +123,7 @@ export class UIManager {
       </nav>
       <footer class="menu-footer">
         <button class="btn btn-small" id="btn-fullscreen">⛶ Fullscreen</button>
-        <span class="version">v1.1.0 · WebGL2</span>
+        <span class="version">v1.2.0 · WebGL2</span>
       </footer>`;
     this.addScreen('main', s);
 
@@ -685,6 +685,8 @@ export class UIManager {
         <div class="boost-bar"><div class="boost-bar-fill" id="hud-boost"></div></div>
       </div>
       <div class="hud-powerups" id="hud-powerups"></div>
+      <div class="hud-powerbar" id="hud-powerbar"></div>
+      <div class="hud-hint" id="hud-hint">A / D CARVE · SPACE JUMP · IN AIR: A / D SPIN · W / S FLIP · E GRAB · SHIFT BOOST · 1-5 POWERS</div>
       <div class="hud-center">
         <div class="hud-countdown hidden" id="hud-countdown"></div>
         <div class="hud-tricks" id="hud-tricks"></div>
@@ -695,6 +697,26 @@ export class UIManager {
     this.el.hud = hud;
     this.el.minimap = hud.querySelector('#minimap');
     this.minimapCtx = this.el.minimap.getContext('2d');
+    this.buildPowerBar();
+  }
+
+  /** Power bar: names + keys for the 1-5 special powers, tap-to-use. */
+  buildPowerBar() {
+    const bar = this.el.hud.querySelector('#hud-powerbar');
+    this.powerChips = new Map();
+    for (const p of this.game.config.gameplay.powers || []) {
+      const chip = el('button', 'power-chip',
+        `<span class="pc-key">${p.slot}</span>
+         <span class="pc-icon">${p.icon}</span>
+         <span class="pc-name">${p.name.toUpperCase()}</span>
+         <span class="pc-cd"></span>`);
+      chip.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        this.game.bus.emit('action', { action: 'power', slot: p.slot });
+      });
+      bar.appendChild(chip);
+      this.powerChips.set(p.id, { chip, def: p, cd: chip.querySelector('.pc-cd') });
+    }
   }
 
   buildOverlays() {
@@ -750,6 +772,12 @@ export class UIManager {
     ];
     this.el.sessionLoading.querySelector('#sl-title').textContent = `${mode.name} · ${map.name}`;
     this.el.sessionLoading.querySelector('#sl-desc').textContent = map.desc;
+    // Sky theme is chosen right after this overlay shows.
+    const once = this.game.bus.on('sky-theme', (t) => {
+      once();
+      const descEl = this.el.sessionLoading.querySelector('#sl-desc');
+      if (descEl) descEl.textContent = `${map.desc} — Sky: ${t.name}`;
+    });
     this.el.sessionLoading.querySelector('#sl-tip').textContent =
       `💡 ${tips[Math.floor(Math.random() * tips.length)]}`;
     this.el.sessionLoading.classList.remove('hidden');
@@ -857,6 +885,9 @@ export class UIManager {
     bus.on('ring', () => this.trickToast('BOOST RING!', 'ring'));
     bus.on('powerup', (e) => this.trickToast(`${POWERUP_ICONS[e.power] || '✨'} ${e.name.toUpperCase()}!`, 'powerup'));
     bus.on('shield-save', () => this.trickToast('🛡️ SHIELD SAVED YOU!', 'perfect'));
+    bus.on('arch', () => this.trickToast('❄️ ICE ARCH!', 'ring'));
+    bus.on('power-used', (p) => this.trickToast(`${p.icon} ${p.name.toUpperCase()}!`, 'powerup'));
+    bus.on('power-denied', (p) => this.toast(`${p.icon} ${p.name} recharging…`, '', 1200));
     bus.on('countdown', (e) => {
       const cd = this.el.hud.querySelector('#hud-countdown');
       cd.classList.remove('hidden');
@@ -973,6 +1004,23 @@ export class UIManager {
     this.el.hud.querySelector('#hud-boost').classList.toggle('active', player.boosting);
     this.el.hud.querySelector('#speedlines').classList.toggle('active',
       player.boosting || player.speedKmh > 110);
+
+    // Power bar cooldowns.
+    if (this.powerChips) {
+      for (const { chip, def, cd } of this.powerChips.values()) {
+        const remaining = player.powerCooldowns[def.id] || 0;
+        const ready = remaining <= 0;
+        chip.classList.toggle('ready', ready);
+        const active =
+          (def.id === 'nitro' && player.effects.nitro > 0) ||
+          (def.id === 'shield' && player.effects.shield > 0) ||
+          (def.id === 'magnet' && player.effects.magnet > 0) ||
+          (def.id === 'slowmo' && game.timeScale < 1);
+        chip.classList.toggle('active', active);
+        cd.textContent = ready ? '' : `${Math.ceil(remaining)}`;
+        cd.style.height = ready ? '0%' : `${Math.min(100, (remaining / def.cooldown) * 100)}%`;
+      }
+    }
 
     // Active power-up indicators.
     const fx = player.effects;

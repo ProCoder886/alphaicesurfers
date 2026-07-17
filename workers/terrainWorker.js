@@ -82,12 +82,18 @@ export function mulberry32(a) {
 /* ------------------------------------------------------------------ */
 
 /**
- * The "racing corridor" — a meandering line the level design gravitates
- * around: solid obstacles keep clear of it, boosters and ramps hug it,
- * and checkpoints ride along it.
+ * The "racing corridor" — the valley floor's centre line. The whole map is
+ * built around it: the rideable groove follows it, the pipe walls rise on
+ * both sides of it, triggers and checkpoints ride along it. Mostly straight
+ * with long, gentle curves.
  */
 export function corridorX(z) {
-  return Math.sin(z * 0.008) * 55 + Math.sin(z * 0.0023 + 1.7) * 130;
+  return Math.sin(z * 0.006) * 26 + Math.sin(z * 0.0016 + 1.7) * 55;
+}
+
+function smoothstep01(t) {
+  t = Math.min(1, Math.max(0, t));
+  return t * t * (3 - 2 * t);
 }
 
 export class TerrainGenerator {
@@ -100,68 +106,68 @@ export class TerrainGenerator {
     this.p = terrain;
   }
 
-  /** Analytic terrain height at any world position. Downhill is +Z. */
+  /**
+   * Analytic terrain height at any world position. Downhill is +Z.
+   *
+   * The world is one long glacial valley — a natural half-pipe:
+   *  - a clean, steadily descending floor along corridorX(z) (steepness
+   *    varies along the run but NEVER climbs, so no holes or uphills),
+   *  - concave pipe walls rising on both sides (ride up, launch, spin),
+   *  - ridge lines and background peaks beyond the walls.
+   */
   height(x, z) {
     const p = this.p, s = this.seed;
-    const ridge = ridged(x * 0.0042, z * 0.0042, s, 4) * p.ridgeAmp;
-    const rolling = fbm(x * 0.016, z * 0.016, s + 7, 4) * p.amp;
-    const detail = fbm(x * 0.085, z * 0.085, s + 23, 3) * 1.6 * p.roughness;
-    let h = -z * p.slope + ridge + rolling + detail;
 
-    // Keep the racing line clear: near the corridor, damp bumps and pull
-    // the big ridges toward their midline so a rideable groove runs down
-    // the middle while hills and walls stay tall on either side.
-    const corridorDist = Math.abs(x - corridorX(z));
-    const W = 44;
-    if (corridorDist < W) {
-      let t = 1 - corridorDist / W;
-      t = t * t * (3 - 2 * t); // smoothstep — no crease at the edge
-      h -= detail * t * 0.9;
-      h -= rolling * t * 0.5;
-      h -= (ridge - p.ridgeAmp * 0.42) * t * 0.55;
-    }
+    // --- valley spine: monotonic descent with flowing steepness ---
+    // Each sine's slope contribution is capped so the sum never exceeds
+    // the base slope: d/dz is always negative. Steep drops happen on the
+    // straight path, but the floor never dips into a hole.
+    const sp = p.slope;
+    const u1 = Math.sin(z * 0.012 + s % 7) * (sp * 0.32 / 0.012);
+    const u2 = Math.sin(z * 0.0031 + (s % 11) * 0.7) * (sp * 0.34 / 0.0031);
+    let h = -z * sp + u1 + u2;
 
-    if (p.city) {
-      // Gentle terracing reads as buried streets and plazas.
-      const q = Math.round(h / 7) * 7;
-      h = h * 0.72 + q * 0.28;
-    }
+    // --- valley cross-section ---
+    const d = Math.abs(x - corridorX(z));
+    const floorHW = p.floorWidth || 16;
+    const wallSpan = p.wallSpan || 95;
+    const wallH = (p.wallHeight || 55) *
+      (0.82 + 0.36 * (valueNoise(z * 0.004, 0, s + 61)));
 
-    if (p.island) {
-      // Carve the world into floating islands over a void.
-      const mask = fbm(x * 0.0036, z * 0.0036, s + 51, 3) + 0.32;
-      const edge = Math.min(1, Math.max(0, mask / 0.3));
-      if (mask < 0.3) h -= (1 - edge) * (1 - edge) * 420;
-    }
-
-    if (p.lakeLevel !== null && p.lakeLevel !== undefined) {
-      const lakeH = -z * p.slope + p.lakeLevel;
-      if (h < lakeH) return lakeH;
+    if (d < floorHW) {
+      // Gentle dish so riders funnel back to the centre line.
+      const f = d / floorHW;
+      h += f * f * 2.2;
+      // Tiny floor detail only — the racing line stays clean.
+      h += fbm(x * 0.09, z * 0.09, s + 23, 2) * 0.4 * p.roughness;
+    } else {
+      const t = (d - floorHW) / wallSpan;
+      // Concave quarter-pipe transition into the wall.
+      const wall = wallH * Math.pow(smoothstep01(t), 1.55);
+      h += 2.2 + wall;
+      // Texture the walls, fading in away from the lip of the pipe.
+      const wallNoise = fbm(x * 0.03, z * 0.03, s + 7, 3) * 6
+        + fbm(x * 0.085, z * 0.085, s + 23, 2) * 1.6 * p.roughness;
+      h += wallNoise * Math.min(1, t * 1.4);
+      // Background peaks beyond the ridge line.
+      if (t > 1) {
+        const back = Math.min(1, t - 1);
+        h += ridged(x * 0.0042, z * 0.0042, s, 4) * (p.ridgeAmp || 40) * back;
+      }
     }
     return h;
   }
 
-  /** Whether analytic position is a frozen-lake surface. */
-  isLake(x, z) {
-    const p = this.p;
-    if (p.lakeLevel === null || p.lakeLevel === undefined) return false;
-    const lakeH = -z * p.slope + p.lakeLevel;
-    // Recompute raw height without the lake clamp.
-    const saved = p.lakeLevel;
-    p.lakeLevel = null;
-    const raw = this.height(x, z);
-    p.lakeLevel = saved;
-    return raw <= lakeH + 0.01;
-  }
-
-  /** Iciness 0..1 (or LAKE_SURF sentinel) at world position. */
+  /** Iciness 0..1 at world position — the floor runs icier than the walls. */
   surface(x, z) {
-    if (this.isLake(x, z)) return LAKE_SURF;
     const p = this.p, s = this.seed;
     const n = fbm(x * 0.02, z * 0.02, s + 89, 3) * 0.5 + 0.5;
-    const threshold = 1 - p.iceRatio;
+    const d = Math.abs(x - corridorX(z));
+    const floorHW = p.floorWidth || 16;
+    // Bias: the racing groove is polished ice, the walls hold snow.
+    const bias = d < floorHW ? 0.18 : -0.1 * Math.min(1, (d - floorHW) / 40);
+    const threshold = Math.min(0.96, Math.max(0.05, 1 - p.iceRatio - bias));
     if (n < threshold) {
-      // Snow — vary subtly between powder and packed.
       return Math.max(0, (n / threshold) * 0.3 - 0.05);
     }
     const t = (n - threshold) / Math.max(0.0001, 1 - threshold);
@@ -231,41 +237,58 @@ export class TerrainGenerator {
     const ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
     const p = this.p;
 
+    // On-path hazards ramp up the deeper you ride into the run.
+    const difficulty = Math.min(1.6, 0.35 + Math.max(0, oz) / 1600);
+
     for (const type of obstacleTypes) {
       if (type.cityOnly && !p.city) continue;
       const densScale = density[type.id] !== undefined ? density[type.id] : 1;
-      const count = Math.round(type.baseDensity * densScale * (0.7 + rng() * 0.6));
+      let count = Math.round(type.baseDensity * densScale * (0.7 + rng() * 0.6));
+      if (type.onPath && type.kind === 'solid') {
+        count = Math.round(count * difficulty);
+        if (oz < 140) count = 0; // safe opening stretch
+      }
       for (let k = 0; k < count; k++) {
         let x, z;
-        if (type.kind === 'trigger') {
-          // Gameplay triggers live near the corridor where riders actually go.
+        if (type.onPath) {
+          // Hazards and pickups sit ON the racing line — dodge or jump them.
+          z = oz + rng() * CHUNK_SIZE;
+          const spread = type.kind === 'solid' ? 11 : 18;
+          x = corridorX(z) + (rng() * 2 - 1) * spread;
+          if (x < ox - 4 || x > ox + CHUNK_SIZE + 4) continue;
+          if (type.kind === 'solid' && z < 160) continue;
+        } else if (type.kind === 'trigger') {
+          // Rewards hug the corridor where riders actually go.
           z = oz + rng() * CHUNK_SIZE;
           x = corridorX(z) + (rng() * 2 - 1) * 22;
           if (x < ox - 4 || x > ox + CHUNK_SIZE + 4) continue;
         } else {
+          // Scenery solids live on the valley walls, clear of the groove.
           x = ox + rng() * CHUNK_SIZE;
           z = oz + rng() * CHUNK_SIZE;
-          // Keep the racing line clear of solid objects.
           if (Math.abs(x - corridorX(z)) < rules.corridorClearance + type.radius) continue;
         }
         // Keep the spawn area safe.
         if (z < 40 && Math.abs(x - corridorX(0)) < rules.spawnClearRadius) continue;
 
         const y = this.height(x, z);
-        // Skip void areas on island maps.
-        if (p.island && y < -z * p.slope - 60) continue;
         // Trees avoid cliffs; everything avoids near-vertical walls.
         const nrm = this.normal(x, z);
         if (type.minSlopeClear && nrm.y < type.minSlopeClear) continue;
         if (nrm.y < 0.45) continue;
-        // No trees on lakes or deep ice.
+        // No trees on polished ice.
         if (type.id === 'tree' && this.surface(x, z) > 0.6) continue;
+
+        // Path-crossing pieces (ridges, arches) align to the corridor.
+        const alignToPath = type.alignPath
+          ? Math.atan2(corridorX(z + 1) - corridorX(z - 1), 2)
+          : null;
 
         out.push({
           type: type.id,
           x, z,
           y: y + (type.hover || 0),
-          rot: rng() * Math.PI * 2,
+          rot: alignToPath !== null ? alignToPath : rng() * Math.PI * 2,
           scale: 0.8 + rng() * 0.7
         });
       }

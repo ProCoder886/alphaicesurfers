@@ -491,7 +491,7 @@
 }
 
 .hud-powerups {
-  bottom: max(3vh, 14px);
+  bottom: 156px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -511,6 +511,87 @@
 .powerup-chip.expiring { animation: pulse 0.5s ease infinite; }
 
 .trick-toast.powerup { color: #ffb35c; }
+
+/* ---------------- power bar (keys 1-5) ---------------- */
+
+.hud-powerbar {
+  bottom: max(3vh, 14px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-46px);
+  display: flex;
+  gap: 0.45rem;
+  pointer-events: auto;
+}
+
+.power-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 76px;
+  padding: 0.4rem 0.2rem 0.35rem;
+  background: var(--c-panel);
+  border: 1px solid rgba(127, 212, 255, 0.25);
+  border-radius: 10px;
+  color: var(--c-text);
+  font-family: var(--font-display);
+  cursor: pointer;
+  overflow: hidden;
+  opacity: 0.55;
+  transition: opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.power-chip.ready { opacity: 1; }
+.power-chip.ready:hover { border-color: rgba(127, 212, 255, 0.7); }
+.power-chip.active {
+  border-color: var(--c-gold);
+  box-shadow: 0 0 14px rgba(255, 209, 102, 0.55);
+}
+
+.pc-key {
+  position: absolute;
+  top: 3px; left: 5px;
+  font-size: 0.62rem;
+  color: var(--c-accent-2);
+  border: 1px solid rgba(127, 212, 255, 0.4);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
+.pc-icon { font-size: 1.15rem; line-height: 1.1; margin-top: 2px; }
+.pc-name { font-size: 0.48rem; letter-spacing: 0.06em; color: var(--c-text-dim); white-space: nowrap; }
+
+.pc-cd {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 0%;
+  background: rgba(10, 18, 32, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--c-gold);
+  pointer-events: none;
+}
+
+/* ---------------- bottom control hint ---------------- */
+
+.hud-hint {
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  color: var(--c-text-dim);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+#hud.zen .hud-hint, #hud.zen .hud-powerbar { display: none; }
+
+/* Time Warp: subtle cinematic grade while slow motion is active. */
+#app.slowmo #game-canvas { filter: saturate(1.35) contrast(1.06) brightness(1.03); }
 
 .hud-center {
   inset: 0;

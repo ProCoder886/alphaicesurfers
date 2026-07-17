@@ -8,7 +8,13 @@
       "seed": 1337,
       "timeOfDay": "cycle",
       "startTime": 0.3,
-      "weatherSet": ["sunny", "cloudy", "snow", "heavysnow", "fog"],
+      "weatherSet": [
+        "sunny",
+        "cloudy",
+        "snow",
+        "heavysnow",
+        "fog"
+      ],
       "startWeather": "sunny",
       "palette": {
         "snow": "#eef4fb",
@@ -26,15 +32,31 @@
       },
       "terrain": {
         "slope": 0.34,
-        "amp": 26,
+        "floorWidth": 16,
+        "wallSpan": 95,
+        "wallHeight": 55,
         "ridgeAmp": 42,
-        "roughness": 0.52,
-        "iceRatio": 0.30,
-        "lakeLevel": null,
-        "island": false
+        "roughness": 0.5,
+        "iceRatio": 0.3
       },
-      "density": { "tree": 1.0, "rock": 0.7, "spike": 0.15, "crystal": 0.8, "ring": 0.6, "ramp": 0.7, "pad": 0.3 },
-      "medals": { "gold": 95, "silver": 120, "bronze": 160 }
+      "density": {
+        "tree": 1.0,
+        "rock": 0.7,
+        "spike": 0.15,
+        "crystal": 0.8,
+        "ring": 0.6,
+        "ramp": 0.7,
+        "pad": 0.3,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 95,
+        "silver": 120,
+        "bronze": 160
+      }
     },
     {
       "id": "arctic",
@@ -44,7 +66,12 @@
       "seed": 8181,
       "timeOfDay": "night",
       "startTime": 0.86,
-      "weatherSet": ["aurora", "snow", "fog", "blizzard"],
+      "weatherSet": [
+        "aurora",
+        "snow",
+        "fog",
+        "blizzard"
+      ],
       "startWeather": "aurora",
       "palette": {
         "snow": "#dbe7f5",
@@ -61,16 +88,32 @@
         "neon": "#66ffc2"
       },
       "terrain": {
-        "slope": 0.22,
-        "amp": 14,
-        "ridgeAmp": 18,
+        "slope": 0.27,
+        "floorWidth": 20,
+        "wallSpan": 115,
+        "wallHeight": 42,
+        "ridgeAmp": 24,
         "roughness": 0.4,
-        "iceRatio": 0.55,
-        "lakeLevel": -6,
-        "island": false
+        "iceRatio": 0.55
       },
-      "density": { "tree": 0.25, "rock": 0.6, "spike": 0.5, "crystal": 1.0, "ring": 0.5, "ramp": 0.5, "pad": 0.3 },
-      "medals": { "gold": 88, "silver": 112, "bronze": 150 }
+      "density": {
+        "tree": 0.25,
+        "rock": 0.6,
+        "spike": 0.5,
+        "crystal": 1.0,
+        "ring": 0.5,
+        "ramp": 0.5,
+        "pad": 0.3,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 88,
+        "silver": 112,
+        "bronze": 150
+      }
     },
     {
       "id": "crystal_caves",
@@ -80,7 +123,11 @@
       "seed": 4242,
       "timeOfDay": "sunset",
       "startTime": 0.68,
-      "weatherSet": ["sunny", "fog", "snow"],
+      "weatherSet": [
+        "sunny",
+        "fog",
+        "snow"
+      ],
       "startWeather": "sunny",
       "palette": {
         "snow": "#e6ddfa",
@@ -98,25 +145,45 @@
       },
       "terrain": {
         "slope": 0.38,
-        "amp": 30,
+        "floorWidth": 15,
+        "wallSpan": 85,
+        "wallHeight": 62,
         "ridgeAmp": 55,
-        "roughness": 0.62,
-        "iceRatio": 0.45,
-        "lakeLevel": null,
-        "island": false
+        "roughness": 0.6,
+        "iceRatio": 0.45
       },
-      "density": { "tree": 0.15, "rock": 1.0, "spike": 1.4, "crystal": 1.6, "ring": 0.8, "ramp": 0.8, "pad": 0.5 },
-      "medals": { "gold": 100, "silver": 128, "bronze": 170 }
+      "density": {
+        "tree": 0.15,
+        "rock": 1.0,
+        "spike": 1.4,
+        "crystal": 1.6,
+        "ring": 0.8,
+        "ramp": 0.8,
+        "pad": 0.5,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 100,
+        "silver": 128,
+        "bronze": 170
+      }
     },
     {
       "id": "frozen_city",
       "name": "Neon Ice City",
-      "desc": "A frozen metropolis at night — carve past glowing towers on streets of black ice.",
+      "desc": "A frozen metropolis at night \u2014 carve past glowing towers on streets of black ice.",
       "unlockLevel": 5,
       "seed": 9099,
       "timeOfDay": "night",
       "startTime": 0.9,
-      "weatherSet": ["aurora", "snow", "fog"],
+      "weatherSet": [
+        "aurora",
+        "snow",
+        "fog"
+      ],
       "startWeather": "snow",
       "palette": {
         "snow": "#d5dced",
@@ -133,17 +200,33 @@
         "neon": "#ff4fd8"
       },
       "terrain": {
-        "slope": 0.28,
-        "amp": 18,
-        "ridgeAmp": 26,
+        "slope": 0.32,
+        "floorWidth": 18,
+        "wallSpan": 90,
+        "wallHeight": 48,
+        "ridgeAmp": 30,
         "roughness": 0.45,
         "iceRatio": 0.6,
-        "lakeLevel": null,
-        "island": false,
         "city": true
       },
-      "density": { "tree": 0.1, "rock": 0.3, "spike": 0.4, "crystal": 1.2, "ring": 1.1, "ramp": 1.0, "pad": 0.8 },
-      "medals": { "gold": 92, "silver": 118, "bronze": 155 }
+      "density": {
+        "tree": 0.1,
+        "rock": 0.3,
+        "spike": 0.4,
+        "crystal": 1.2,
+        "ring": 1.1,
+        "ramp": 1.0,
+        "pad": 0.8,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 92,
+        "silver": 118,
+        "bronze": 155
+      }
     },
     {
       "id": "ice_volcano",
@@ -153,7 +236,11 @@
       "seed": 6660,
       "timeOfDay": "sunset",
       "startTime": 0.74,
-      "weatherSet": ["cloudy", "fog", "heavysnow"],
+      "weatherSet": [
+        "cloudy",
+        "fog",
+        "heavysnow"
+      ],
       "startWeather": "cloudy",
       "palette": {
         "snow": "#e3e0e2",
@@ -170,16 +257,32 @@
         "neon": "#ff6b3d"
       },
       "terrain": {
-        "slope": 0.44,
-        "amp": 34,
+        "slope": 0.46,
+        "floorWidth": 14,
+        "wallSpan": 80,
+        "wallHeight": 70,
         "ridgeAmp": 70,
         "roughness": 0.7,
-        "iceRatio": 0.25,
-        "lakeLevel": null,
-        "island": false
+        "iceRatio": 0.25
       },
-      "density": { "tree": 0.3, "rock": 1.4, "spike": 1.0, "crystal": 0.9, "ring": 0.7, "ramp": 1.0, "pad": 0.6 },
-      "medals": { "gold": 105, "silver": 135, "bronze": 175 }
+      "density": {
+        "tree": 0.3,
+        "rock": 1.4,
+        "spike": 1.0,
+        "crystal": 0.9,
+        "ring": 0.7,
+        "ramp": 1.0,
+        "pad": 0.6,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 105,
+        "silver": 135,
+        "bronze": 175
+      }
     },
     {
       "id": "floating_glaciers",
@@ -189,7 +292,11 @@
       "seed": 2718,
       "timeOfDay": "cycle",
       "startTime": 0.35,
-      "weatherSet": ["sunny", "cloudy", "snow"],
+      "weatherSet": [
+        "sunny",
+        "cloudy",
+        "snow"
+      ],
       "startWeather": "sunny",
       "palette": {
         "snow": "#f2f7ff",
@@ -206,16 +313,32 @@
         "neon": "#7ab8ff"
       },
       "terrain": {
-        "slope": 0.3,
-        "amp": 24,
-        "ridgeAmp": 38,
+        "slope": 0.34,
+        "floorWidth": 15,
+        "wallSpan": 88,
+        "wallHeight": 58,
+        "ridgeAmp": 45,
         "roughness": 0.55,
-        "iceRatio": 0.4,
-        "lakeLevel": null,
-        "island": true
+        "iceRatio": 0.4
       },
-      "density": { "tree": 0.4, "rock": 0.6, "spike": 0.4, "crystal": 1.2, "ring": 1.2, "ramp": 0.9, "pad": 0.9 },
-      "medals": { "gold": 110, "silver": 140, "bronze": 185 }
+      "density": {
+        "tree": 0.4,
+        "rock": 0.6,
+        "spike": 0.4,
+        "crystal": 1.2,
+        "ring": 1.2,
+        "ramp": 0.9,
+        "pad": 0.9,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 110,
+        "silver": 140,
+        "bronze": 185
+      }
     },
     {
       "id": "sky_islands",
@@ -225,7 +348,10 @@
       "seed": 3141,
       "timeOfDay": "sunset",
       "startTime": 0.7,
-      "weatherSet": ["sunny", "cloudy"],
+      "weatherSet": [
+        "sunny",
+        "cloudy"
+      ],
       "startWeather": "sunny",
       "palette": {
         "snow": "#fdf2ec",
@@ -242,16 +368,32 @@
         "neon": "#ff9e3d"
       },
       "terrain": {
-        "slope": 0.36,
-        "amp": 32,
-        "ridgeAmp": 60,
+        "slope": 0.4,
+        "floorWidth": 13,
+        "wallSpan": 82,
+        "wallHeight": 66,
+        "ridgeAmp": 58,
         "roughness": 0.6,
-        "iceRatio": 0.35,
-        "lakeLevel": null,
-        "island": true
+        "iceRatio": 0.35
       },
-      "density": { "tree": 0.3, "rock": 0.7, "spike": 0.6, "crystal": 1.4, "ring": 1.5, "ramp": 1.1, "pad": 1.0 },
-      "medals": { "gold": 115, "silver": 150, "bronze": 195 }
+      "density": {
+        "tree": 0.3,
+        "rock": 0.7,
+        "spike": 0.6,
+        "crystal": 1.4,
+        "ring": 1.5,
+        "ramp": 1.1,
+        "pad": 1.0,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 115,
+        "silver": 150,
+        "bronze": 195
+      }
     },
     {
       "id": "cyber_ice_city",
@@ -261,7 +403,10 @@
       "seed": 7777,
       "timeOfDay": "night",
       "startTime": 0.92,
-      "weatherSet": ["aurora", "fog"],
+      "weatherSet": [
+        "aurora",
+        "fog"
+      ],
       "startWeather": "aurora",
       "palette": {
         "snow": "#c9d6ec",
@@ -278,17 +423,33 @@
         "neon": "#00e5ff"
       },
       "terrain": {
-        "slope": 0.4,
-        "amp": 22,
+        "slope": 0.42,
+        "floorWidth": 12,
+        "wallSpan": 78,
+        "wallHeight": 56,
         "ridgeAmp": 34,
         "roughness": 0.5,
         "iceRatio": 0.75,
-        "lakeLevel": null,
-        "island": false,
         "city": true
       },
-      "density": { "tree": 0.05, "rock": 0.4, "spike": 0.7, "crystal": 1.5, "ring": 1.6, "ramp": 1.3, "pad": 1.1 },
-      "medals": { "gold": 85, "silver": 108, "bronze": 145 }
+      "density": {
+        "tree": 0.05,
+        "rock": 0.4,
+        "spike": 0.7,
+        "crystal": 1.5,
+        "ring": 1.6,
+        "ramp": 1.3,
+        "pad": 1.1,
+        "icefang": 1.0,
+        "iceridge": 1.0,
+        "boulder": 1.0,
+        "icearch": 1.0
+      },
+      "medals": {
+        "gold": 85,
+        "silver": 108,
+        "bronze": 145
+      }
     }
   ]
 }

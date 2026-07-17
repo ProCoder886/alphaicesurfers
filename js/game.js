@@ -124,6 +124,12 @@ export class InputManager {
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+      // Power slots on 1-5 (top row or numpad).
+      const powerMatch = e.code.match(/^(?:Digit|Numpad)([1-5])$/);
+      if (powerMatch) {
+        game.bus.emit('action', { action: 'power', slot: Number(powerMatch[1]) });
+        return;
+      }
       const action = this.codeMap.get(e.code);
       if (!action) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
@@ -264,6 +270,21 @@ export class Profiler {
 /* Quality presets                                                     */
 /* ================================================================== */
 
+/**
+ * Sky themes — one is picked at random every time a run (or the menu
+ * world) starts, recoloring sky dome, fog, reflections and ambient light.
+ */
+const SKY_THEMES = [
+  { name: 'Rose Dawn',    top: '#e87fb4', horizon: '#ffdcee', fog: '#f2cade' },
+  { name: 'Mint Glacier', top: '#4ec9a0', horizon: '#e4fff3', fog: '#c8ecdb' },
+  { name: 'Violet Dream', top: '#8b6fe8', horizon: '#ecdcff', fog: '#d7c4ef' },
+  { name: 'Golden Hour',  top: '#f0b23e', horizon: '#fff3d0', fog: '#f0deb2' },
+  { name: 'Polar Blue',   top: '#2f6fce', horizon: '#cfe6f7', fog: '#cfdff0' },
+  { name: 'Peach Frost',  top: '#f28a60', horizon: '#ffe6d5', fog: '#f2d2c0' },
+  { name: 'Aqua Aurora',  top: '#35b8c9', horizon: '#defbff', fog: '#c5ecf0' },
+  { name: 'Lilac Dusk',   top: '#b57fd6', horizon: '#ffe3f4', fog: '#e3c8e6' }
+];
+
 const QUALITY_PRESETS = {
   low: {
     pixelRatio: 1, shadowMap: 1024, shadows: true, obstacleShadows: false,
@@ -297,9 +318,18 @@ export class Game {
     this.qualityLevel = 'medium';
     this.quality = { ...QUALITY_PRESETS.medium };
     this.lastFrame = performance.now();
+    // Time Warp power: scales simulation speed (1 = realtime).
+    this.timeScale = 1;
+    this.timeScaleTimer = 0;
     // Coarse-pointer devices get mobile-tuned rendering defaults.
     this.isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
       && window.matchMedia('(pointer: coarse)').matches;
+  }
+
+  setTimeScale(scale, duration) {
+    this.timeScale = scale;
+    this.timeScaleTimer = duration;
+    document.getElementById('app').classList.toggle('slowmo', scale < 1);
   }
 
   async init() {
@@ -358,11 +388,12 @@ export class Game {
   }
 
   bindGlobalEvents() {
-    this.bus.on('action', ({ action }) => {
+    this.bus.on('action', ({ action, slot }) => {
       if (action === 'pause') this.handlePauseAction();
       else if (action === 'camera' && this.state === 'playing') this.cameras.cycleMode();
       else if (action === 'photo') this.togglePhotoMode();
       else if (action === 'reset' && this.state === 'playing') this.player.respawn();
+      else if (action === 'power' && this.state === 'playing') this.player.activatePower(slot);
     });
     window.addEventListener('visibilitychange', () => {
       if (document.hidden && this.state === 'playing') this.pause();
@@ -410,10 +441,14 @@ export class Game {
     return this.config.maps.maps.filter((m) => m.unlockLevel <= level);
   }
 
+  pickSkyTheme() {
+    return SKY_THEMES[Math.floor(Math.random() * SKY_THEMES.length)];
+  }
+
   loadMenuWorld() {
     const map = this.unlockedMaps()[0] || this.config.maps.maps[0];
-    this.world.loadMap(map);
-    this.weather.setupForMap(map, { weatherDynamic: true });
+    this.world.loadMap(map, this.pickSkyTheme());
+    this.weather.setupForMap(this.world.map, { weatherDynamic: true });
     this.cameras.menuPhase = 0;
   }
 
@@ -432,8 +467,11 @@ export class Game {
     this.map = map;
     this.mode = mode;
 
-    this.world.loadMap(map);
-    this.weather.setupForMap(map, mode);
+    const sky = this.pickSkyTheme();
+    this.skyTheme = sky;
+    this.world.loadMap(map, sky);
+    this.weather.setupForMap(this.world.map, mode);
+    this.bus.emit('sky-theme', sky);
 
     const spawn = this.world.spawnPoint();
     this.player.buildMesh();
@@ -506,6 +544,7 @@ export class Game {
   }
 
   teardownSession() {
+    this.setTimeScale(1, 0);
     this.ai.clear();
     this.player.disposeMesh();
     this.session = null;
@@ -680,8 +719,16 @@ export class Game {
         if (after !== before) this.bus.emit('countdown', { n: after });
         if (s.countdown <= 0) this.bus.emit('countdown', { n: 0 });
       } else {
+        // Time Warp winds back to realtime on a real-seconds clock.
+        if (this.timeScaleTimer > 0) {
+          this.timeScaleTimer -= dt;
+          if (this.timeScaleTimer <= 0) this.setTimeScale(1, 0);
+        }
         const step = this.config.physics.fixedTimeStep;
-        this.accumulator = Math.min(this.accumulator + dt, step * this.config.physics.maxSubSteps * 4);
+        this.accumulator = Math.min(
+          this.accumulator + dt * this.timeScale,
+          step * this.config.physics.maxSubSteps * 4
+        );
         while (this.accumulator >= step) {
           this.player.fixedUpdate(step);
           this.ai.fixedUpdate(step);

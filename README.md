@@ -42,9 +42,20 @@ virtual stick + buttons. Full details in [docs/controls.md](docs/controls.md).
 
 ## ✨ Features
 
-- **Endless procedural mountains** — seeded, deterministic terrain streamed in
-  chunks from a Web Worker, with powder, packed snow, blue ice, black ice and
-  frozen lakes that all *feel* different under the board.
+- **Endless glacial valley runs** — a natural half-pipe that builds ahead of
+  you as you ride: a clean, steadily descending racing groove (steep drops,
+  never a hole or uphill), concave tree-lined walls on both sides to launch
+  360s off, and background peaks beyond — all seeded, deterministic and
+  streamed chunk-by-chunk from a Web Worker.
+- **Random pastel skies** — every run rolls a new sky theme (rose, mint,
+  violet, gold, peach, aqua…) that recolors the sky dome, fog, reflections
+  and lighting.
+- **Active powers on keys 1–5** — Nitro Burst, Super Jump (works mid-air),
+  Ice Shield, Time Warp slow-motion and Magnet Pulse, each on its own
+  cooldown, with an on-screen power bar showing names, keys and charge.
+- **On-path ice hazards** — ice fangs, jumpable ice ridges, boulders and
+  scoring ice arches spawn ON the racing line and get denser the further
+  you ride.
 - **8 hand-tuned locations** — Swiss Alps, Arctic Circle (aurora nights),
   Crystal Glacier Kingdom, Neon Ice City, Ice Volcano, Floating Glaciers,
   Sky Glacier Islands and the Cyber Ice Metropolis.
