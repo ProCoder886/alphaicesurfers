@@ -1,6 +1,6 @@
 {
   "title": "Alpha Ice Surfers 3D",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "modes": [
     {
       "id": "freeroam",
@@ -117,11 +117,50 @@
     "shakeSpeedThreshold": 24
   },
   "powers": [
-    { "slot": 1, "id": "nitro",  "name": "Nitro Burst",  "icon": "🔥", "cooldown": 8,  "duration": 2.5 },
-    { "slot": 2, "id": "leap",   "name": "Super Jump",   "icon": "🚀", "cooldown": 10 },
-    { "slot": 3, "id": "shield", "name": "Ice Shield",   "icon": "🛡️", "cooldown": 24, "duration": 6 },
-    { "slot": 4, "id": "slowmo", "name": "Time Warp",    "icon": "⏳", "cooldown": 20, "duration": 3 },
-    { "slot": 5, "id": "magnet", "name": "Magnet Pulse", "icon": "🧲", "cooldown": 18, "duration": 8 }
+    { "slot": 1, "id": "nitro",    "name": "Nitro Burst",  "icon": "🔥", "cooldown": 8,  "duration": 2.5 },
+    { "slot": 2, "id": "leap",     "name": "Super Jump",   "icon": "🚀", "cooldown": 10 },
+    { "slot": 3, "id": "shield",   "name": "Ice Shield",   "icon": "🛡️", "cooldown": 24, "duration": 6 },
+    { "slot": 4, "id": "slowmo",   "name": "Time Warp",    "icon": "⏳", "cooldown": 20, "duration": 3 },
+    { "slot": 5, "id": "magnet",   "name": "Magnet Pulse", "icon": "🧲", "cooldown": 18, "duration": 8 },
+    { "slot": 6, "id": "wingsuit", "name": "Wingsuit",     "icon": "🪂", "cooldown": 16, "duration": 4.5, "airOnly": true }
+  ],
+  "autoRide": {
+    "accel": 15,
+    "tuckCruiseBonus": 1.16
+  },
+  "difficulties": [
+    {
+      "id": "amateur", "name": "Amateur", "icon": "🟢",
+      "desc": "Relaxed cruising, gentle hazards, forgiving powers.",
+      "cruise": 26, "maxSpeed": 44, "boostAccel": 12,
+      "powerCooldownScale": 0.75, "boostDrainScale": 0.7,
+      "aiSkillBonus": -0.12, "aiExtra": 0, "hazardScale": 0.6,
+      "meteorInterval": 0, "xpScale": 0.8
+    },
+    {
+      "id": "pro", "name": "Pro", "icon": "🔵",
+      "desc": "The intended experience: fast lines, real hazards, sky attacks.",
+      "cruise": 40, "maxSpeed": 60, "boostAccel": 14,
+      "powerCooldownScale": 1.0, "boostDrainScale": 1.0,
+      "aiSkillBonus": 0, "aiExtra": 1, "hazardScale": 1.0,
+      "meteorInterval": 12, "xpScale": 1.0
+    },
+    {
+      "id": "elite", "name": "Elite", "icon": "🟣",
+      "desc": "Blistering speed, dense ice, sharper rivals, frequent attacks.",
+      "cruise": 48, "maxSpeed": 68, "boostAccel": 15,
+      "powerCooldownScale": 1.15, "boostDrainScale": 1.15,
+      "aiSkillBonus": 0.12, "aiExtra": 2, "hazardScale": 1.3,
+      "meteorInterval": 8, "xpScale": 1.3
+    },
+    {
+      "id": "legendary", "name": "Legendary", "icon": "🟠",
+      "desc": "Maximum velocity. Relentless skies. Perfect rivals. Glory.",
+      "cruise": 55, "maxSpeed": 76, "boostAccel": 16,
+      "powerCooldownScale": 1.3, "boostDrainScale": 1.3,
+      "aiSkillBonus": 0.22, "aiExtra": 3, "hazardScale": 1.6,
+      "meteorInterval": 5.5, "xpScale": 1.6
+    }
   ],
   "boost": {
     "max": 100,

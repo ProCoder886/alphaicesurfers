@@ -50,9 +50,24 @@ virtual stick + buttons. Full details in [docs/controls.md](docs/controls.md).
 - **Random pastel skies** — every run rolls a new sky theme (rose, mint,
   violet, gold, peach, aqua…) that recolors the sky dome, fog, reflections
   and lighting.
-- **Active powers on keys 1–5** — Nitro Burst, Super Jump (works mid-air),
-  Ice Shield, Time Warp slow-motion and Magnet Pulse, each on its own
-  cooldown, with an on-screen power bar showing names, keys and charge.
+- **Auto-ride** — the board carries you forward on its own at your
+  difficulty's cruise speed; you steer, jump and trick.
+- **Active powers on keys 1–6** — Nitro Burst, Super Jump (works mid-air),
+  Ice Shield, Time Warp slow-motion, Magnet Pulse and the mid-air
+  **Wingsuit** glide, each on its own cooldown, with an on-screen power
+  bar showing names, keys and charge.
+- **Four difficulties** — Amateur, Pro, Elite and Legendary scale cruise
+  speed, boost power, stamina drain, power cooldowns, rival skill and
+  count, hazard density, sky-attack frequency and XP.
+- **Sky attacks** — flaming ice meteors rain in at intervals with warning
+  rings, impact shockwaves and camera shake (Pro difficulty and up).
+- **Cinematic slow-motion** — automatic brief slow-mo on big stunts,
+  near-missed obstacles and close passes on rivals, plus the manual
+  Time Warp power.
+- **A living sky** — sun and crescent moon, drifting cumulus and high
+  cirrus, flapping bird flocks, a hot-air balloon, shooting stars and
+  aurora nights; snow-capped forests, board trails and landing
+  shockwaves on the ground.
 - **On-path ice hazards** — ice fangs, jumpable ice ridges, boulders and
   scoring ice arches spawn ON the racing line and get denser the further
   you ride.

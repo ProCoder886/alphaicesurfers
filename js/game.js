@@ -124,8 +124,8 @@ export class InputManager {
 
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
-      // Power slots on 1-5 (top row or numpad).
-      const powerMatch = e.code.match(/^(?:Digit|Numpad)([1-5])$/);
+      // Power slots on 1-6 (top row or numpad).
+      const powerMatch = e.code.match(/^(?:Digit|Numpad)([1-6])$/);
       if (powerMatch) {
         game.bus.emit('action', { action: 'power', slot: Number(powerMatch[1]) });
         return;
@@ -321,6 +321,8 @@ export class Game {
     // Time Warp power: scales simulation speed (1 = realtime).
     this.timeScale = 1;
     this.timeScaleTimer = 0;
+    this.autoSlowmoCooldown = 0;
+    this.meteorTimer = 0;
     // Coarse-pointer devices get mobile-tuned rendering defaults.
     this.isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0)
       && window.matchMedia('(pointer: coarse)').matches;
@@ -330,6 +332,26 @@ export class Game {
     this.timeScale = scale;
     this.timeScaleTimer = duration;
     document.getElementById('app').classList.toggle('slowmo', scale < 1);
+  }
+
+  /** Difficulty definition for the current profile setting. */
+  get difficulty() {
+    if (!this.config) return null;
+    const id = this.save ? this.save.profile.settings.difficulty : 'pro';
+    const list = this.config.gameplay.difficulties;
+    return list.find((d) => d.id === id) || list[1];
+  }
+
+  /**
+   * Brief automatic slow-motion for cinematic moments (big stunts,
+   * near misses, close passes). Rate-limited so it stays special, and
+   * never interrupts a player-activated Time Warp.
+   */
+  cinematicSlowmo(duration) {
+    if (this.timeScale < 1 || this.autoSlowmoCooldown > 0) return;
+    if (this.state !== 'playing') return;
+    this.autoSlowmoCooldown = 9;
+    this.setTimeScale(0.45, duration);
   }
 
   async init() {
@@ -398,6 +420,13 @@ export class Game {
     window.addEventListener('visibilitychange', () => {
       if (document.hidden && this.state === 'playing') this.pause();
     });
+
+    // Cinematic slow-motion moments.
+    this.bus.on('trick', (e) => {
+      if (e.points >= 1100 || e.combo >= 4) this.cinematicSlowmo(0.8);
+    });
+    this.bus.on('nearmiss', () => this.cinematicSlowmo(0.5));
+    this.bus.on('closepass', () => this.cinematicSlowmo(0.5));
   }
 
   handlePauseAction() {
@@ -505,6 +534,8 @@ export class Game {
     }
 
     this.accumulator = 0;
+    this.meteorTimer = (this.difficulty?.meteorInterval || 10) * 0.9;
+    this.autoSlowmoCooldown = 4;
     this.state = 'playing';
     this.ui.showHUD();
     this.bus.emit('session-start', { map, mode });
@@ -615,6 +646,23 @@ export class Game {
       }
     }
 
+    // Sky attacks: incoming ice meteors at difficulty-scaled intervals.
+    const diff = this.difficulty;
+    if (diff && diff.meteorInterval > 0 && !mode.zen) {
+      this.meteorTimer -= dt;
+      if (this.meteorTimer <= 0) {
+        this.meteorTimer = diff.meteorInterval * (0.8 + Math.random() * 0.5);
+        const p = this.player.body;
+        const lead = 1.7;
+        this.world.spawnMeteor(
+          p.pos.x + p.vel.x * lead + (Math.random() - 0.5) * 16,
+          p.pos.z + p.vel.z * lead + (Math.random() - 0.5) * 10,
+          lead
+        );
+        this.bus.emit('meteor-warning', {});
+      }
+    }
+
     // Race standings.
     if (mode.race) {
       s.standingsTimer = (s.standingsTimer || 0) - dt;
@@ -648,10 +696,11 @@ export class Game {
     }
     s.medal = medal;
 
-    // --- XP ---
+    // --- XP (scaled by difficulty) ---
     let xp = Math.round(s.score / gp.xp.scoreDivisor + s.distance / gp.xp.distanceDivisor);
     if (outcome === 'finished') xp += gp.xp.finishBonus;
     if (medal) xp += gp.xp.medalBonus[medal];
+    xp = Math.round(xp * (this.difficulty ? this.difficulty.xpScale : 1));
     s.xpEarned = xp;
 
     // --- stats ---
@@ -724,6 +773,7 @@ export class Game {
           this.timeScaleTimer -= dt;
           if (this.timeScaleTimer <= 0) this.setTimeScale(1, 0);
         }
+        if (this.autoSlowmoCooldown > 0) this.autoSlowmoCooldown -= dt;
         const step = this.config.physics.fixedTimeStep;
         this.accumulator = Math.min(
           this.accumulator + dt * this.timeScale,

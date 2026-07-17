@@ -193,6 +193,13 @@ export class AudioManager {
     bus.on('arch', () => this.chime([0, 4, 9], 700, 0.04, 0.16));
     bus.on('power-used', () => this.chime([0, 12], 520, 0.04, 0.18));
     bus.on('power-denied', () => this.blip(180, 0.12, 'square', 0.08));
+    bus.on('meteor-warning', () => this.blip(900, 1.2, 'sawtooth', 0.1, -650));
+    bus.on('meteor-impact', () => {
+      this.noiseBurst(0.7, 140, 0.6, 0.6, 'lowpass');
+      this.blip(70, 0.5, 'sine', 0.35, -30);
+    });
+    bus.on('nearmiss', () => this.noiseBurst(0.2, 2200, 1.2, 0.18, 'bandpass'));
+    bus.on('closepass', () => this.noiseBurst(0.2, 1600, 1.2, 0.18, 'bandpass'));
     bus.on('ramp', () => this.noiseBurst(0.25, 900, 1, 0.2, 'highpass'));
     bus.on('checkpoint', () => this.chime([0, 4, 7, 12], 540, 0.06, 0.2));
     bus.on('countdown', (e) => this.blip(e.n === 0 ? 880 : 440, 0.18, 'square', 0.15));

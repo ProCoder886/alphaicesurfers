@@ -26,7 +26,8 @@ function defaultProfile() {
       sfx: 0.9,
       showFps: false,
       invertFlip: false,
-      cameraMode: 'follow'
+      cameraMode: 'follow',
+      difficulty: 'pro'
     },
     stats: {
       sessions: 0, tricksLanded: 0, flipsLanded: 0, spinsLanded: 0,

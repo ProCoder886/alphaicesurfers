@@ -94,13 +94,30 @@ export class PhysicsEngine {
       const surf = this.surfaceParams(icy);
       body.groundNormal.copy(_n);
 
+      // --- difficulty-scaled speed envelope ---
+      const diff = this.game.difficulty;
+      const cruiseScale = input.cruiseScale || 1;
+      const cruise = (diff ? diff.cruise : 32) * cruiseScale
+        * (input.tuck ? this.game.config.gameplay.autoRide.tuckCruiseBonus : 1);
+      const maxSpeed = (diff ? diff.maxSpeed : cfg.maxSpeed) * cruiseScale;
+
       // --- steering ---
       const speed = body.vel.length();
-      const speedT = Math.min(1, speed / cfg.maxSpeed);
+      const speedT = Math.min(1, speed / maxSpeed);
       const turnRate = cfg.turnSpeed + (cfg.turnSpeedAtMax - cfg.turnSpeed) * speedT;
       body.heading = wrapAngle(body.heading + input.steer * turnRate * dt);
 
       _fwd.set(Math.sin(body.heading), 0, Math.cos(body.heading));
+
+      // --- auto-ride engine: the board carries the rider forward on its
+      // own, holding full thrust until ~80% of the difficulty's cruise
+      // speed and tapering after, so the rider actually reaches cruise
+      // against friction and drag. No throttle button needed.
+      if (!input.brake) {
+        const deficit = Math.max(0, 1 - speed / cruise);
+        const thrust = Math.min(1, deficit * 5);
+        body.vel.addScaledVector(_fwd, this.game.config.gameplay.autoRide.accel * thrust * dt);
+      }
 
       // --- gravity along slope ---
       // Slope tangent acceleration: g projected onto surface plane.
@@ -140,19 +157,26 @@ export class PhysicsEngine {
         body.vel.multiplyScalar(newSpeed / sp2);
       }
 
-      // --- aerodynamic drag (tuck reduces it) ---
-      const dragScale = input.tuck ? cfg.tuckDragScale : 1;
+      // --- aerodynamic drag: only bites above cruise, relaxing speed back
+      // toward it, so every difficulty actually reaches its target pace.
+      // Tucking raises the ceiling; boost ignores it entirely.
       const sp3 = body.vel.length();
-      body.vel.multiplyScalar(Math.max(0, 1 - cfg.linearDrag * dragScale * sp3 * dt * 60));
+      const ceiling = cruise * (input.tuck ? 1.06 : 1.0);
+      if (sp3 > ceiling && !input.boost) {
+        const dragScale = input.tuck ? cfg.tuckDragScale : 1;
+        const newSpeed = sp3 - (sp3 - ceiling) * 1.25 * dragScale * dt;
+        body.vel.multiplyScalar(newSpeed / sp3);
+      }
 
       // --- boost thrust ---
       if (input.boost) {
-        body.vel.addScaledVector(_fwd, this.game.config.gameplay.boost.accel * dt);
+        const boostAccel = diff ? diff.boostAccel : this.game.config.gameplay.boost.accel;
+        body.vel.addScaledVector(_fwd, boostAccel * dt);
       }
 
       // --- speed cap ---
       const spd = body.vel.length();
-      const cap = cfg.maxSpeed * (input.boost ? 1.15 : 1);
+      const cap = maxSpeed * (input.boost ? 1.15 : 1);
       if (spd > cap) body.vel.multiplyScalar(cap / spd);
 
       // --- jump ---
@@ -166,16 +190,27 @@ export class PhysicsEngine {
       }
     } else {
       // --- airborne ---
-      body.vel.y -= g * dt;
+      if (input.wingsuit) {
+        // Wingsuit: most of gravity becomes lift, the suit drives forward,
+        // and air steering sharpens — a glide, not a fall.
+        body.vel.y -= g * 0.22 * dt;
+        _fwd.set(Math.sin(body.heading), 0, Math.cos(body.heading));
+        body.vel.addScaledVector(_fwd, 9.5 * dt);
+        const wcap = (this.game.difficulty ? this.game.difficulty.maxSpeed : 60) * 1.1;
+        const wspd = body.vel.length();
+        if (wspd > wcap) body.vel.multiplyScalar(wcap / wspd);
+      } else {
+        body.vel.y -= g * dt;
+      }
       body.airTime += dt;
       // Wind pushes harder in the air.
       const windMul = this.cfg.wind.airborneMultiplier * dt;
       body.vel.x += this.wind.x * windMul;
       body.vel.z += this.wind.y * windMul;
-      // Air steering (weak drift control).
+      // Air steering (weak drift control; strong in a wingsuit).
       if (input.airControl) {
         _fwd.set(Math.sin(body.heading), 0, Math.cos(body.heading));
-        body.vel.addScaledVector(_fwd, input.airControl * 2.0 * dt);
+        body.vel.addScaledVector(_fwd, input.airControl * (input.wingsuit ? 6 : 2) * dt);
       }
     }
 

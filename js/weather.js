@@ -53,6 +53,10 @@ export class WeatherSystem {
     this.buildSnow();
     this.buildAurora(pal);
     this.buildClouds(pal);
+    this.buildCirrus(pal);
+    this.buildBirds();
+    this.buildBalloon(pal);
+    this.buildShootingStars();
 
     this.timeMode = map.timeOfDay;
     this.timeOfDay = map.startTime !== undefined ? map.startTime : 0.3;
@@ -74,6 +78,9 @@ export class WeatherSystem {
     this.snow = null;
     this.aurora = null;
     this.clouds = [];
+    this.flocks = [];
+    this.balloon = null;
+    this.stars = [];
   }
 
   buildSnow() {
@@ -135,7 +142,7 @@ export class WeatherSystem {
 
   buildClouds(pal) {
     const sh = this.game.assets.shaders.clouds;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 9; i++) {
       const uniforms = {
         uTime: { value: 0 },
         uOpacity: { value: 0.4 },
@@ -152,11 +159,119 @@ export class WeatherSystem {
       });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(420, 160), mat);
       mesh.rotation.x = -Math.PI / 2 + 0.35;
-      mesh.userData.angle = (i / 6) * Math.PI * 2;
-      mesh.userData.radius = 380 + (i % 3) * 120;
-      mesh.userData.height = 250 + (i % 2) * 70;
+      mesh.userData.angle = (i / 9) * Math.PI * 2;
+      mesh.userData.radius = 340 + (i % 3) * 130;
+      mesh.userData.height = 240 + (i % 3) * 60;
       mesh.userData.uniforms = uniforms;
       this.clouds.push(mesh);
+      this.group.add(mesh);
+    }
+  }
+
+  /** Thin, high, slow cirrus veils above the cumulus layer. */
+  buildCirrus(pal) {
+    const sh = this.game.assets.shaders.clouds;
+    for (let i = 0; i < 4; i++) {
+      const uniforms = {
+        uTime: { value: i * 40 },
+        uOpacity: { value: 0.16 },
+        uColor: { value: new THREE.Color('#ffffff') },
+        uSeed: { value: 100 + i * 17.3 }
+      };
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: sh.VERTEX,
+        fragmentShader: sh.FRAGMENT,
+        uniforms,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(760, 90), mat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.userData.angle = (i / 4) * Math.PI * 2 + 0.7;
+      mesh.userData.radius = 420 + i * 90;
+      mesh.userData.height = 400;
+      mesh.userData.uniforms = uniforms;
+      this.clouds.push(mesh); // shares the cloud drift/update path
+      this.group.add(mesh);
+    }
+  }
+
+  /** V-formations of flapping birds circling the valley. */
+  buildBirds() {
+    this.flocks = [];
+    const wingGeo = new THREE.PlaneGeometry(0.85, 0.32);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x1c2733, side: THREE.DoubleSide, transparent: true, opacity: 0.9
+    });
+    for (let f = 0; f < 3; f++) {
+      const flock = new THREE.Group();
+      const birds = [];
+      const count = 5 + f * 2;
+      for (let i = 0; i < count; i++) {
+        const bird = new THREE.Group();
+        const wingL = new THREE.Mesh(wingGeo, mat);
+        wingL.position.x = -0.4;
+        const wingR = new THREE.Mesh(wingGeo, mat);
+        wingR.position.x = 0.4;
+        bird.add(wingL, wingR);
+        // V formation offsets.
+        const k = Math.ceil(i / 2), side = i % 2 === 0 ? 1 : -1;
+        bird.position.set(side * k * 2.4, -k * 0.25, -k * 2.8);
+        bird.userData = { wingL, wingR, phase: i * 0.7 };
+        flock.add(bird);
+        birds.push(bird);
+      }
+      flock.userData = {
+        birds,
+        angle: (f / 3) * Math.PI * 2,
+        radius: 130 + f * 55,
+        height: 60 + f * 32,
+        speed: 0.055 + f * 0.012,
+        flapRate: 7 + f * 1.5
+      };
+      this.flocks.push(flock);
+      this.group.add(flock);
+    }
+  }
+
+  /** A lone hot-air balloon drifting high over the range (daytime). */
+  buildBalloon(pal) {
+    const g = new THREE.Group();
+    const envelope = new THREE.Mesh(
+      new THREE.SphereGeometry(6, 12, 10),
+      new THREE.MeshStandardMaterial({ color: new THREE.Color(pal.neon || '#e2543a'), roughness: 0.6 })
+    );
+    envelope.scale.set(1, 1.15, 1);
+    const stripe = new THREE.Mesh(
+      new THREE.SphereGeometry(6.05, 12, 10, 0, Math.PI * 2, Math.PI * 0.35, Math.PI * 0.3),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+    );
+    stripe.scale.copy(envelope.scale);
+    const basket = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 1.6, 2.2),
+      new THREE.MeshStandardMaterial({ color: 0x6b4a2c, roughness: 0.9 })
+    );
+    basket.position.y = -8.4;
+    g.add(envelope, stripe, basket);
+    g.userData = { angle: Math.random() * Math.PI * 2, radius: 300, height: 150, speed: 0.009 };
+    this.balloon = g;
+    this.group.add(g);
+  }
+
+  /** Pool of shooting-star streaks for clear nights. */
+  buildShootingStars() {
+    this.stars = [];
+    for (let i = 0; i < 3; i++) {
+      const mesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(16, 0.4),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff, transparent: true, opacity: 0,
+          blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+        })
+      );
+      mesh.visible = false;
+      this.stars.push({ mesh, life: 0, vel: new THREE.Vector3() });
       this.group.add(mesh);
     }
   }
@@ -251,6 +366,12 @@ export class WeatherSystem {
     if (world.sky) {
       const u = world.sky.material.uniforms;
       u.uNight.value = night;
+      // Moon rides opposite the sun, kept above the horizon at night.
+      u.uMoonDir.value.set(
+        -Math.cos(ang) * 0.8,
+        Math.max(0.22, -elev * 0.9 + 0.1),
+        -0.4
+      ).normalize();
       _colA.set(pal.skyTop);
       _colB.set(pal.skyHorizon);
       // Dim sky colors through the fog/cloud amount.
@@ -294,6 +415,66 @@ export class WeatherSystem {
     this.aurora.visible = this.auroraUniforms.uIntensity.value > 0.01;
     this.aurora.position.x = game.camera.position.x;
     this.aurora.position.z = game.camera.position.z - 250;
+
+    // --- living sky: birds, balloon, shooting stars ---
+    const clearSky = this.prop('fogDensity') < 0.008;
+    for (const flock of this.flocks || []) {
+      flock.visible = clearSky;
+      if (!flock.visible) continue;
+      const u = flock.userData;
+      u.angle += u.speed * dt;
+      const cam = game.camera.position;
+      flock.position.set(
+        cam.x + Math.cos(u.angle) * u.radius,
+        cam.y + u.height + Math.sin(u.angle * 3) * 6,
+        cam.z + Math.sin(u.angle) * u.radius
+      );
+      // Face along the flight direction.
+      flock.rotation.y = -u.angle + Math.PI / 2;
+      for (const bird of u.birds) {
+        const flap = Math.sin(game.elapsed * u.flapRate + bird.userData.phase) * 0.6;
+        bird.userData.wingL.rotation.z = flap;
+        bird.userData.wingR.rotation.z = -flap;
+      }
+    }
+
+    if (this.balloon) {
+      this.balloon.visible = clearSky && night < 0.6;
+      if (this.balloon.visible) {
+        const u = this.balloon.userData;
+        u.angle += u.speed * dt;
+        const cam = game.camera.position;
+        this.balloon.position.set(
+          cam.x + Math.cos(u.angle) * u.radius,
+          cam.y + u.height + Math.sin(game.elapsed * 0.1) * 4,
+          cam.z + Math.sin(u.angle) * u.radius
+        );
+      }
+    }
+
+    for (const s of this.stars || []) {
+      if (s.life > 0) {
+        s.life -= dt;
+        s.mesh.position.addScaledVector(s.vel, dt);
+        s.mesh.material.opacity = Math.min(1, s.life * 3) * 0.85;
+        if (s.life <= 0) s.mesh.visible = false;
+      } else if (night > 0.5 && clearSky && Math.random() < dt * 0.18) {
+        // Launch a streak across a random patch of night sky.
+        const cam = game.camera.position;
+        const az = Math.random() * Math.PI * 2;
+        const elv = 0.5 + Math.random() * 0.5;
+        s.mesh.position.set(
+          cam.x + Math.cos(az) * 450 * (1 - elv * 0.5),
+          cam.y + 320 * elv,
+          cam.z + Math.sin(az) * 450 * (1 - elv * 0.5)
+        );
+        s.vel.set(Math.cos(az + 2), -0.35, Math.sin(az + 2)).multiplyScalar(260);
+        s.mesh.lookAt(s.mesh.position.clone().add(s.vel));
+        s.mesh.rotateY(Math.PI / 2);
+        s.life = 0.8;
+        s.mesh.visible = true;
+      }
+    }
 
     // --- clouds ---
     const cloudOp = this.prop('cloudOpacity');

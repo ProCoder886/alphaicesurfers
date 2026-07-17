@@ -152,6 +152,82 @@ export class SprayEmitter {
   }
 }
 
+/**
+ * Fading ribbon left in the snow behind the board — a cheap dynamic
+ * strip mesh (ring buffer of cross-sections, alpha fades with age).
+ */
+export class BoardTrail {
+  constructor(scene, color, maxPoints = 70) {
+    this.max = maxPoints;
+    this.points = [];      // { l:Vector3, r:Vector3, age:0 }
+    this.timer = 0;
+    const geo = new THREE.BufferGeometry();
+    this.positions = new Float32Array(maxPoints * 2 * 3);
+    this.alphas = new Float32Array(maxPoints * 2);
+    this.posAttr = new THREE.BufferAttribute(this.positions, 3).setUsage(THREE.DynamicDrawUsage);
+    this.alphaAttr = new THREE.BufferAttribute(this.alphas, 1).setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', this.posAttr);
+    geo.setAttribute('aA', this.alphaAttr);
+    const idx = [];
+    for (let i = 0; i < maxPoints - 1; i++) {
+      const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+      idx.push(a, b, c, b, d, c);
+    }
+    geo.setIndex(idx);
+    this.mesh = new THREE.Mesh(geo, new THREE.ShaderMaterial({
+      uniforms: { uColor: { value: new THREE.Color(color) } },
+      vertexShader: `attribute float aA; varying float vA;
+        void main(){ vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+      fragmentShader: `uniform vec3 uColor; varying float vA;
+        void main(){ if (vA < 0.01) discard; gl_FragColor = vec4(uColor, vA * 0.5); }`,
+      transparent: true,
+      depthWrite: false
+    }));
+    this.mesh.frustumCulled = false;
+    scene.add(this.mesh);
+  }
+
+  push(pos, heading) {
+    const px = Math.cos(heading) * 0.28, pz = -Math.sin(heading) * 0.28;
+    this.points.push({
+      lx: pos.x - px, ly: pos.y + 0.06, lz: pos.z - pz,
+      rx: pos.x + px, ry: pos.y + 0.06, rz: pos.z + pz,
+      age: 0
+    });
+    if (this.points.length > this.max) this.points.shift();
+  }
+
+  update(dt, body, grounded, speed) {
+    this.timer -= dt;
+    if (grounded && speed > 7 && this.timer <= 0) {
+      this.timer = 0.035;
+      this.push(body.pos, body.heading);
+    }
+    const n = this.points.length;
+    for (let i = 0; i < this.max; i++) {
+      const p = this.points[i];
+      if (!p) {
+        this.alphas[i * 2] = this.alphas[i * 2 + 1] = 0;
+        continue;
+      }
+      p.age += dt;
+      const a = Math.max(0, 1 - p.age / 1.6) * (i / Math.max(1, n));
+      this.positions[i * 6] = p.lx; this.positions[i * 6 + 1] = p.ly; this.positions[i * 6 + 2] = p.lz;
+      this.positions[i * 6 + 3] = p.rx; this.positions[i * 6 + 4] = p.ry; this.positions[i * 6 + 5] = p.rz;
+      this.alphas[i * 2] = a;
+      this.alphas[i * 2 + 1] = a;
+    }
+    this.posAttr.needsUpdate = true;
+    this.alphaAttr.needsUpdate = true;
+  }
+
+  dispose(scene) {
+    scene.remove(this.mesh);
+    this.mesh.geometry.dispose();
+    this.mesh.material.dispose();
+  }
+}
+
 export class Player {
   constructor(game) {
     this.game = game;
@@ -187,8 +263,12 @@ export class Player {
     this.rampCooldowns = new Map();
 
     // Active power-up timers (seconds remaining).
-    this.effects = { magnet: 0, shield: 0, nitro: 0, multiplier: 0 };
+    this.effects = { magnet: 0, shield: 0, nitro: 0, multiplier: 0, wingsuit: 0 };
     this.shieldMesh = null;
+    this.wingMesh = null;
+    this.trail = null;
+    this.shockwaves = [];
+    this.nearMissCooldowns = new Map();
 
     // Activatable powers (keys 1-5): id -> cooldown seconds remaining.
     this.powerCooldowns = {};
@@ -226,6 +306,31 @@ export class Player {
     this.shieldMesh.position.y = 0.9;
     this.shieldMesh.visible = false;
     this.mesh.add(this.shieldMesh);
+
+    // Wingsuit membrane, shown only while gliding.
+    const wingGeo = new THREE.PlaneGeometry(2.3, 0.9, 4, 1);
+    const wpos = wingGeo.attributes.position;
+    for (let i = 0; i < wpos.count; i++) {
+      // Sweep the wing tips back for a delta silhouette.
+      const wx = wpos.getX(i);
+      wpos.setZ(i, -Math.abs(wx) * 0.4);
+    }
+    wingGeo.computeVertexNormals();
+    this.wingMesh = new THREE.Mesh(wingGeo, new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#ff9d3c'),
+      emissive: new THREE.Color('#ff9d3c'),
+      emissiveIntensity: 0.6,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.92
+    }));
+    this.wingMesh.rotation.x = -Math.PI / 2 + 0.25;
+    this.wingMesh.position.set(0, 1.05, -0.15);
+    this.wingMesh.visible = false;
+    this.refs.flip.add(this.wingMesh);
+
+    // Carving trail ribbon left in the snow behind the board.
+    this.trail = new BoardTrail(this.game.scene, '#eafaff');
   }
 
   disposeMesh() {
@@ -236,8 +341,32 @@ export class Player {
       if (o.material) o.material.dispose();
     });
     if (this.spray) this.spray.dispose(this.game.scene);
+    if (this.trail) this.trail.dispose(this.game.scene);
+    for (const sw of this.shockwaves) {
+      this.game.scene.remove(sw.mesh);
+      sw.mesh.geometry.dispose();
+      sw.mesh.material.dispose();
+    }
+    this.shockwaves = [];
     this.mesh = null;
     this.spray = null;
+    this.trail = null;
+    this.wingMesh = null;
+  }
+
+  /** Expanding snow ring on solid landings. */
+  spawnShockwave(pos, strength) {
+    const mesh = new THREE.Mesh(
+      new THREE.RingGeometry(0.5, 1.0, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0.55,
+        side: THREE.DoubleSide, depthWrite: false
+      })
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(pos.x, pos.y + 0.1, pos.z);
+    this.game.scene.add(mesh);
+    this.shockwaves.push({ mesh, life: 0.5, strength });
   }
 
   spawn(x, z, heading = 0) {
@@ -263,7 +392,9 @@ export class Player {
     this.effects.shield = 0;
     this.effects.nitro = 0;
     this.effects.multiplier = 0;
+    this.effects.wingsuit = 0;
     this.powerCooldowns = {};
+    this.nearMissCooldowns.clear();
     if (this.mesh) {
       this.mesh.position.copy(b.pos);
       this.mesh.rotation.set(0, heading, 0);
@@ -338,10 +469,13 @@ export class Player {
       this.boosting = true;
     } else if (input.isDown('boost') && session && session.boost > 1 && b.grounded) {
       this.boosting = true;
-      session.boost = Math.max(0, session.boost - boostCfg.drainPerSecond * dt);
+      const drainScale = game.difficulty ? game.difficulty.boostDrainScale : 1;
+      session.boost = Math.max(0, session.boost - boostCfg.drainPerSecond * drainScale * dt);
     }
 
     const wasGrounded = b.grounded;
+
+    const gliding = this.effects.wingsuit > 0 && !b.grounded;
 
     const events = game.physics.integrateRider(b, {
       steer: b.grounded ? steer : 0,
@@ -349,7 +483,8 @@ export class Player {
       brake: input.isDown('brake'),
       boost: this.boosting,
       jumpImpulse,
-      airControl: b.grounded ? 0 : steer * 0.4
+      wingsuit: gliding,
+      airControl: b.grounded ? 0 : steer * (gliding ? 1 : 0.4)
     }, dt);
 
     // --- airborne trick accumulation ---
@@ -363,14 +498,22 @@ export class Player {
         this.grabName = null;
         this.airStartY = b.pos.y;
       }
-      const spinRate = steer * cfg.airYawRate;
-      b.heading = wrapAngle(b.heading + spinRate * dt);
-      this.spinAccum += spinRate * dt;
-      const flipRate = pitchAxis * cfg.airPitchRate;
-      this.flipAccum += flipRate * dt;
-      this.flipVisual = this.flipAccum;
+      if (gliding) {
+        // Wingsuit: steering banks the glide instead of spinning tricks,
+        // and any pending flip levels back out.
+        b.heading = wrapAngle(b.heading + steer * 1.9 * dt);
+        this.flipAccum *= Math.max(0, 1 - dt * 3);
+        this.flipVisual = this.flipAccum;
+      } else {
+        const spinRate = steer * cfg.airYawRate;
+        b.heading = wrapAngle(b.heading + spinRate * dt);
+        this.spinAccum += spinRate * dt;
+        const flipRate = pitchAxis * cfg.airPitchRate;
+        this.flipAccum += flipRate * dt;
+        this.flipVisual = this.flipAccum;
+      }
 
-      if (input.isDown('grab')) {
+      if (input.isDown('grab') && !gliding) {
         if (!this.grabName) {
           const grabs = game.config.tricks.names.grabs;
           this.grabName = grabs[Math.floor(Math.random() * grabs.length)];
@@ -381,7 +524,9 @@ export class Player {
 
     // --- landing ---
     if (events.landed) {
+      this.effects.wingsuit = 0; // touching down folds the wingsuit
       this.handleLanding(events);
+      if (events.impact > 6) this.spawnShockwave(b.pos, events.impact);
     }
 
     // --- solid obstacle impact ---
@@ -399,6 +544,36 @@ export class Player {
       const near = game.world.obstaclesNear(b.pos.x, b.pos.z, 12);
       for (const ob of near) {
         if (ob.type === 'crystal' && !ob.consumed) this.handleTrigger(ob, dt);
+      }
+    }
+
+    // --- cinematic near-miss detection (solid obstacles skimmed at speed) ---
+    const speedNow = this.speed;
+    if (b.grounded && speedNow > 17 && this.crashTimer <= 0) {
+      const near = game.world.obstaclesNear(b.pos.x, b.pos.z, 4.5);
+      for (const ob of near) {
+        if (ob.kind !== 'solid' || ob.consumed) continue;
+        const gap = Math.hypot(b.pos.x - ob.x, b.pos.z - ob.z) - ob.radius * ob.scale - 0.55;
+        if (gap > 0 && gap < 1.0) {
+          const last = this.nearMissCooldowns.get(ob) || -10;
+          if (game.elapsed - last > 4) {
+            this.nearMissCooldowns.set(ob, game.elapsed);
+            this.addScore(50, 'Near Miss');
+            game.bus.emit('nearmiss', {});
+          }
+        }
+      }
+      // Close passes on rival riders.
+      for (const rider of game.ai.riders) {
+        const d = b.pos.distanceTo(rider.body.pos);
+        if (d < 2.6) {
+          const last = this.nearMissCooldowns.get(rider) || -10;
+          if (game.elapsed - last > 5) {
+            this.nearMissCooldowns.set(rider, game.elapsed);
+            this.addScore(75, 'Close Pass');
+            game.bus.emit('closepass', { name: rider.name });
+          }
+        }
       }
     }
 
@@ -645,6 +820,10 @@ export class Player {
       return;
     }
     const b = this.body;
+    if (def.airOnly && b.grounded) {
+      game.bus.emit('power-denied', { ...def, reason: 'air' });
+      return;
+    }
     switch (def.id) {
       case 'nitro':
         this.effects.nitro = def.duration;
@@ -668,10 +847,16 @@ export class Player {
       case 'magnet':
         this.effects.magnet = def.duration;
         break;
+      case 'wingsuit':
+        this.effects.wingsuit = def.duration;
+        // Deploying gives a small upward pop as the suit catches air.
+        b.vel.y = Math.max(b.vel.y, 2.5);
+        break;
       default:
         return;
     }
-    this.powerCooldowns[def.id] = def.cooldown;
+    const cdScale = game.difficulty ? game.difficulty.powerCooldownScale : 1;
+    this.powerCooldowns[def.id] = def.cooldown * cdScale;
     game.bus.emit('power-used', def);
   }
 
@@ -765,16 +950,21 @@ export class Player {
         }
       }
     } else {
-      // Airborne: flips + grab pose.
+      // Airborne: flips + grab pose (or wingsuit glide pose).
+      const gliding = this.effects.wingsuit > 0;
       _q.setFromAxisAngle(_up, b.heading);
       this.mesh.quaternion.slerp(_q, Math.min(1, dt * 18));
-      refs.flip.rotation.x = this.flipVisual;
-      refs.tilt.rotation.z *= Math.max(0, 1 - dt * 4);
-      const grabbing = input.isDown('grab');
-      refs.armL.rotation.z += ((grabbing ? 2.4 : 0.9) - refs.armL.rotation.z) * Math.min(1, dt * 10);
-      refs.armR.rotation.z += ((grabbing ? -0.2 : -0.9) - refs.armR.rotation.z) * Math.min(1, dt * 10);
+      refs.flip.rotation.x = gliding ? 0.5 : this.flipVisual;
+      const bank = gliding ? -input.axis('steer') * 0.7 : refs.tilt.rotation.z * Math.max(0, 1 - dt * 4);
+      refs.tilt.rotation.z += (bank - refs.tilt.rotation.z) * Math.min(1, dt * 8);
+      const grabbing = input.isDown('grab') && !gliding;
+      const armLT = gliding ? 1.55 : grabbing ? 2.4 : 0.9;
+      const armRT = gliding ? -1.55 : grabbing ? -0.2 : -0.9;
+      refs.armL.rotation.z += (armLT - refs.armL.rotation.z) * Math.min(1, dt * 10);
+      refs.armR.rotation.z += (armRT - refs.armR.rotation.z) * Math.min(1, dt * 10);
       refs.body.position.y += ((grabbing ? -0.12 : 0.06) - refs.body.position.y) * Math.min(1, dt * 10);
     }
+    if (this.wingMesh) this.wingMesh.visible = this.effects.wingsuit > 0 && !b.grounded;
 
     // Shield bubble pulse.
     if (this.shieldMesh) {
@@ -789,5 +979,21 @@ export class Player {
     }
 
     if (this.spray) this.spray.update(dt);
+    if (this.trail) this.trail.update(dt, b, b.grounded && this.crashTimer <= 0, this.speed);
+
+    // Landing shockwaves expand and fade.
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.life -= dt;
+      const t = 1 - sw.life / 0.5;
+      sw.mesh.scale.setScalar(1 + t * (2 + sw.strength * 0.25));
+      sw.mesh.material.opacity = 0.55 * (1 - t);
+      if (sw.life <= 0) {
+        this.game.scene.remove(sw.mesh);
+        sw.mesh.geometry.dispose();
+        sw.mesh.material.dispose();
+        this.shockwaves.splice(i, 1);
+      }
+    }
   }
 }

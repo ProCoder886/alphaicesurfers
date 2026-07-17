@@ -16,6 +16,7 @@ uniform vec3 uTopColor;
 uniform vec3 uHorizonColor;
 uniform vec3 uSunColor;
 uniform vec3 uSunDir;
+uniform vec3 uMoonDir;
 uniform float uNight;   // 0 = day, 1 = deep night
 uniform float uTime;
 varying vec3 vDir;
@@ -41,6 +42,18 @@ void main() {
 
   // Night: darken and reveal stars.
   vec3 nightCol = col * mix(1.0, 0.32, uNight);
+
+  // Crescent moon: a bright disc with an offset shadow disc bitten out,
+  // plus a soft halo. Faint by day, luminous at night.
+  vec3 md = normalize(uMoonDir);
+  float moonDot = max(dot(dir, md), 0.0);
+  float disc = smoothstep(0.99988, 0.99996, moonDot);
+  vec3 biteDir = normalize(md + vec3(0.010, 0.006, 0.0));
+  float bite = smoothstep(0.99982, 0.99994, max(dot(dir, biteDir), 0.0));
+  float crescent = clamp(disc - bite * 0.92, 0.0, 1.0);
+  float halo = pow(moonDot, 600.0) * 0.35;
+  nightCol += vec3(0.93, 0.95, 1.0) * (crescent * 1.7 + halo) * (0.25 + 0.75 * uNight);
+
   if (uNight > 0.02 && dir.y > -0.05) {
     vec3 cell = floor(dir * 240.0);
     float star = hash13(cell);

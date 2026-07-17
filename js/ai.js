@@ -62,8 +62,11 @@ export class AIRider {
     const colors = AI_COLORS[index % AI_COLORS.length];
     this.rng = mulberry32(game.world.map.seed + 977 * (index + 1));
 
-    this.skill = 0.62 + this.rng() * 0.33;
+    const diffBonus = game.difficulty ? game.difficulty.aiSkillBonus : 0;
+    this.skill = Math.min(0.98, Math.max(0.3, 0.62 + this.rng() * 0.33 + diffBonus));
     this.aggression = 0.4 + this.rng() * 0.6;
+    // Ride slightly below the player's cruise; top-skill rivals match it.
+    this.cruiseScale = 0.8 + this.skill * 0.22;
 
     this.body = createRiderBody();
     const { group, refs } = buildRider(colors);
@@ -195,6 +198,7 @@ export class AIRider {
       tuck, brake: false,
       boost,
       jumpImpulse,
+      cruiseScale: this.cruiseScale,
       airControl: 0
     }, dt);
 
@@ -339,7 +343,10 @@ export class AIManager {
 
   spawnForSession(mode) {
     this.clear();
-    const count = mode.aiRiders || 0;
+    let count = mode.aiRiders || 0;
+    // Harder difficulties field more rivals (only in modes that have any).
+    if (count > 0 && this.game.difficulty) count += this.game.difficulty.aiExtra;
+    count = Math.min(count, 10);
     const spawn = this.game.world.spawnPoint();
     for (let i = 0; i < count; i++) {
       const rider = new AIRider(this.game, i);

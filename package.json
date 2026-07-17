@@ -1,6 +1,6 @@
 {
   "name": "alpha-ice-surfers-3d",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Alpha Ice Surfers 3D — AAA-quality HTML5 open-world ice surfing game built on Three.js.",
   "type": "module",
   "private": true,

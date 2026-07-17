@@ -209,6 +209,37 @@
 .ride-best { font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .ride-best b { color: var(--c-gold); }
 
+.diff-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  color: var(--c-text-dim);
+}
+
+.diff-row { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.diff-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  color: var(--c-text);
+  background: rgba(18, 30, 52, 0.8);
+  border: 1px solid rgba(127, 212, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.diff-chip.selected {
+  border-color: var(--c-gold);
+  background: rgba(80, 62, 24, 0.55);
+  box-shadow: 0 0 10px rgba(255, 209, 102, 0.35);
+}
+
+.diff-desc { font-size: 0.74rem !important; min-height: 2.1em; }
+
 /* ---------------- garage ---------------- */
 
 .garage-layout {

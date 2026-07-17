@@ -31,18 +31,20 @@
   #toasts { bottom: 20vh; }
   .hud-powerups { bottom: max(24vh, 120px); }
 
-  /* Powers: a vertical rail on the left edge, compact icon + key chips. */
+  /* Powers: a compact 2-column grid on the left edge, icon + key chips. */
   .hud-hint { display: none; }
   .hud-powerbar {
     left: 8px;
     bottom: auto;
     top: 50%;
     transform: translateY(-50%);
-    flex-direction: column;
-    gap: 0.4rem;
+    display: grid;
+    grid-template-columns: repeat(2, 50px);
+    gap: 0.35rem;
   }
-  .power-chip { width: 54px; padding: 0.35rem 0.1rem; }
+  .power-chip { width: 50px; padding: 0.3rem 0.1rem; }
   .pc-name { display: none; }
+  .pc-icon { font-size: 1rem; }
 
   /* Rearrange the HUD around the touch controls:
      speed moves to bottom-centre (the stick owns bottom-left),

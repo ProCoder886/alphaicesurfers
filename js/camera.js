@@ -38,6 +38,7 @@ export class CameraManager {
     game.bus.on('landing', (e) => { this.shake = Math.min(1, this.shake + e.impact * 0.03); });
     game.bus.on('crash', () => { this.shake = Math.min(1.4, this.shake + 0.8); });
     game.bus.on('bump', () => { this.shake = Math.min(1, this.shake + 0.25); });
+    game.bus.on('meteor-impact', () => { this.shake = Math.min(1.4, this.shake + 0.65); });
 
     this.bindPhotoControls();
   }

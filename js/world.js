@@ -16,6 +16,9 @@ import * as THREE from 'three';
 import {
   TerrainGenerator, corridorX, CHUNK_SIZE, CHUNK_RES
 } from '../workers/terrainWorker.js';
+import { SprayEmitter } from './player.js';
+
+const HAZARD_IDS = ['icefang', 'iceridge', 'boulder', 'spike'];
 
 const _v1 = new THREE.Vector3();
 const _m1 = new THREE.Matrix4();
@@ -44,6 +47,8 @@ export class World {
     this.checkpoints = [];
     this.avalanche = null;
     this.powerupAnim = new Set();
+    this.meteors = [];
+    this.impactSpray = null;
     this.timeU = { value: 0 };
     this.envTexture = null;
     this.sky = null;
@@ -117,6 +122,13 @@ export class World {
       : mapDef;
     mapDef = this.map;
     this.generator = new TerrainGenerator(mapDef.seed, mapDef.terrain);
+
+    // Difficulty scales the on-path hazard density.
+    const hazardScale = this.game.difficulty ? this.game.difficulty.hazardScale : 1;
+    this.densityScaled = { ...mapDef.density };
+    for (const id of HAZARD_IDS) {
+      this.densityScaled[id] = (this.densityScaled[id] ?? 1) * hazardScale;
+    }
     this.group = new THREE.Group();
     this.group.name = `map:${mapDef.id}`;
     this.scene.add(this.group);
@@ -129,6 +141,9 @@ export class World {
     this.buildObstacleAssets(pal);
 
     this.scene.fog = new THREE.FogExp2(new THREE.Color(pal.fog), 0.0022);
+
+    // Shared particle pool for meteor impacts.
+    this.impactSpray = new SprayEmitter(this.group, '#ffffff', 140);
 
     // Start arch so the spawn reads as a place, not a random field.
     const spawn = this.spawnPoint();
@@ -148,6 +163,8 @@ export class World {
     this.checkpoints = [];
     this.avalanche = null;
     this.powerupAnim.clear();
+    this.meteors = [];
+    this.impactSpray = null;
     if (this.group) {
       this.group.traverse((o) => {
         if (o.geometry) o.geometry.dispose();
@@ -196,6 +213,7 @@ export class World {
         uHorizonColor: { value: new THREE.Color(pal.skyHorizon) },
         uSunColor: { value: new THREE.Color(pal.sunColor) },
         uSunDir: { value: new THREE.Vector3(0.3, 0.6, 0.2) },
+        uMoonDir: { value: new THREE.Vector3(-0.3, 0.5, -0.2) },
         uNight: { value: 0 },
         uTime: this.timeU
       },
@@ -272,12 +290,20 @@ export class World {
       ...opts
     });
 
-    const foliage = new THREE.ConeGeometry(1.7, 4.6, 6);
-    foliage.translate(0, 3.3, 0);
+    // Trees: two foliage tiers plus a snow cap for a wintry silhouette.
+    const foliage = new THREE.ConeGeometry(1.8, 3.4, 7);
+    foliage.translate(0, 2.6, 0);
+    const foliageTop = new THREE.ConeGeometry(1.25, 2.6, 7);
+    foliageTop.translate(0, 4.5, 0);
+    const treeSnow = new THREE.ConeGeometry(1.32, 1.15, 7);
+    treeSnow.translate(0, 5.35, 0);
     const trunk = new THREE.CylinderGeometry(0.26, 0.38, 1.7, 5);
     trunk.translate(0, 0.85, 0);
     const rock = new THREE.DodecahedronGeometry(1.6, 0);
     rock.translate(0, 0.8, 0);
+    const rockSnow = new THREE.SphereGeometry(1.25, 8, 5);
+    rockSnow.scale(1.15, 0.35, 1.15);
+    rockSnow.translate(0, 1.55, 0);
     const spike = new THREE.ConeGeometry(0.95, 3.6, 5);
     spike.translate(0, 1.7, 0);
     const towerBody = new THREE.BoxGeometry(6.4, 42, 6.4);
@@ -317,9 +343,14 @@ export class World {
     boulder.translate(0, 1.3, 0);
     const archGeo = new THREE.TorusGeometry(4.2, 0.65, 8, 22);
 
+    const snowMat = flat(pal.snow, { roughness: 0.95 });
     this.obstacleTemplates = {
-      tree: { parts: [[foliage, flat(pal.tree)], [trunk, flat(pal.trunk)]], shadow: true },
-      rock: { parts: [[rock, flat(pal.rock)]], shadow: true },
+      tree: {
+        parts: [[foliage, flat(pal.tree)], [foliageTop, flat(pal.tree)],
+                [treeSnow, snowMat], [trunk, flat(pal.trunk)]],
+        shadow: true
+      },
+      rock: { parts: [[rock, flat(pal.rock)], [rockSnow, snowMat]], shadow: true },
       spike: { parts: [[spike, glow(pal.ice, 0.25, { roughness: 0.2, metalness: 0.4 })]], shadow: true },
       tower: { parts: [[towerBody, flat(pal.rock)], [towerCap, glow(pal.neon, 2.2)]], shadow: true },
       crystal: { parts: [[crystal, glow(pal.crystal, 1.2, { transparent: true, opacity: 0.92 })]], shadow: false },
@@ -419,6 +450,89 @@ export class World {
     return this.checkpoints;
   }
 
+  /* ================= sky attacks: ice meteors ================= */
+
+  /**
+   * Spawn an incoming ice meteor aimed at (x, z), landing in ~delay seconds.
+   * A pulsing warning ring marks the impact point the whole way down.
+   */
+  spawnMeteor(x, z, delay = 1.7) {
+    if (!this.map) return;
+    const groundY = this.sampleHeight(x, z);
+
+    const rockMesh = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(1.35, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0x8fd8ff,
+        emissive: new THREE.Color('#ff8a3c'),
+        emissiveIntensity: 1.6,
+        roughness: 0.3
+      })
+    );
+    // Fiery tail: a stretched cone behind the fall direction.
+    const tail = new THREE.Mesh(
+      new THREE.ConeGeometry(0.9, 6, 6),
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color('#ffb35c'), transparent: true, opacity: 0.55, depthWrite: false
+      })
+    );
+    tail.position.y = 3.4;
+    rockMesh.add(tail);
+
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.2, 3.2, 26),
+      new THREE.MeshBasicMaterial({
+        color: 0xff4444, transparent: true, opacity: 0.65,
+        side: THREE.DoubleSide, depthWrite: false
+      })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, groundY + 0.15, z);
+    this.group.add(rockMesh, ring);
+
+    // Falls in from high ahead of the rider.
+    const start = new THREE.Vector3(x + (Math.random() - 0.5) * 24, groundY + 135, z + 55);
+    rockMesh.position.copy(start);
+    const vel = new THREE.Vector3(x, groundY, z).sub(start).divideScalar(delay);
+    this.meteors.push({ mesh: rockMesh, ring, vel, targetY: groundY, x, z });
+  }
+
+  updateMeteors(dt) {
+    if (!this.meteors.length) return;
+    for (let i = this.meteors.length - 1; i >= 0; i--) {
+      const m = this.meteors[i];
+      m.mesh.position.addScaledVector(m.vel, dt);
+      m.mesh.rotation.x += dt * 6;
+      m.mesh.rotation.y += dt * 4;
+      m.ring.material.opacity = 0.45 + Math.sin(this.timeU.value * 14) * 0.25;
+      if (m.mesh.position.y <= m.targetY + 0.6) {
+        // Impact: snow burst + player check.
+        if (this.impactSpray) {
+          this.impactSpray.spawn(m.mesh.position, _v1.set(0, 6, 0), 45, 7);
+        }
+        const player = this.game.player;
+        if (player && player.mesh) {
+          const d = Math.hypot(player.body.pos.x - m.x, player.body.pos.z - m.z);
+          if (d < 5) player.crash('meteor');
+          else if (d < 9) this.game.bus.emit('nearmiss', {});
+        }
+        this.game.bus.emit('meteor-impact', {});
+        this.disposeMeteor(m);
+        this.meteors.splice(i, 1);
+      }
+    }
+  }
+
+  disposeMeteor(m) {
+    this.group.remove(m.mesh, m.ring);
+    m.mesh.geometry.dispose();
+    m.mesh.material.dispose();
+    m.mesh.children[0]?.geometry.dispose();
+    m.mesh.children[0]?.material.dispose();
+    m.ring.geometry.dispose();
+    m.ring.material.dispose();
+  }
+
   /* ================= avalanche ================= */
 
   createAvalanche(startZ) {
@@ -489,7 +603,7 @@ export class World {
       id: ++this.reqId, cx, cz,
       seed: this.map.seed,
       terrain: this.map.terrain,
-      density: this.map.density,
+      density: this.densityScaled,
       obstacleTypes: this.game.config.obstacles.types,
       rules: this.game.config.obstacles
     });
@@ -539,7 +653,7 @@ export class World {
     if (chunk) return chunk;
     // Physics needs this ground *now* — generate synchronously.
     const data = this.generator.generateChunk(
-      cx, cz, this.map.density, this.game.config.obstacles.types, this.game.config.obstacles
+      cx, cz, this.densityScaled, this.game.config.obstacles.types, this.game.config.obstacles
     );
     this.requested.delete(key);
     return this.registerChunk(cx, cz, data);
@@ -609,6 +723,8 @@ export class World {
       m.rotation.y += dt * 2.1;
       m.position.y = entry.ob.y + Math.sin(this.timeU.value * 2.3 + entry.phase) * 0.35;
     }
+    this.updateMeteors(dt);
+    if (this.impactSpray) this.impactSpray.update(dt);
     if (this.sky && this.game.camera) this.sky.position.copy(this.game.camera.position);
 
     // Checkpoint gate highlight.

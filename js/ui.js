@@ -123,7 +123,7 @@ export class UIManager {
       </nav>
       <footer class="menu-footer">
         <button class="btn btn-small" id="btn-fullscreen">⛶ Fullscreen</button>
-        <span class="version">v1.2.0 · WebGL2</span>
+        <span class="version">v1.3.0 · WebGL2</span>
       </footer>`;
     this.addScreen('main', s);
 
@@ -192,6 +192,9 @@ export class UIManager {
         <section class="ride-col ride-summary panel">
           <h3 id="ride-title">—</h3>
           <p id="ride-desc"></p>
+          <div class="diff-label">DIFFICULTY</div>
+          <div class="diff-row" id="diff-row"></div>
+          <p class="diff-desc" id="diff-desc"></p>
           <div id="ride-best" class="ride-best"></div>
           <button class="btn btn-big btn-accent" id="btn-start" disabled>START</button>
         </section>
@@ -248,6 +251,24 @@ export class UIManager {
       card.dataset.id = map.id;
       mapList.appendChild(card);
     }
+
+    // Difficulty picker.
+    const diffRow = this.screens.ride.querySelector('#diff-row');
+    diffRow.innerHTML = '';
+    const selected = game.save.profile.settings.difficulty || 'pro';
+    for (const d of game.config.gameplay.difficulties) {
+      const b = el('button', `diff-chip ${d.id === selected ? 'selected' : ''}`,
+        `${d.icon}<span>${d.name}</span>`);
+      b.addEventListener('click', () => {
+        this.click();
+        game.save.profile.settings.difficulty = d.id;
+        game.save.persist();
+        this.refreshRideScreen();
+      });
+      diffRow.appendChild(b);
+    }
+    const diffDef = game.config.gameplay.difficulties.find((d) => d.id === selected);
+    this.screens.ride.querySelector('#diff-desc').textContent = diffDef ? diffDef.desc : '';
 
     if (!this.rideSelection.modeId) this.rideSelection.modeId = 'freeroam';
     if (!this.rideSelection.mapId) this.rideSelection.mapId = game.unlockedMaps()[0].id;
@@ -550,8 +571,10 @@ export class UIManager {
       </header>
       <div class="help-body panel">
         <div class="help-grid">
+          <div><b>Auto-ride</b> Your board accelerates on its own — steer, jump, trick!</div>
           <div><b>A / D or ← →</b> Carve left / right (spin in the air)</div>
-          <div><b>W / S or ↑ ↓</b> Tuck / brake (flip in the air)</div>
+          <div><b>W / S or ↑ ↓</b> Extra tuck speed / brake (flip in the air)</div>
+          <div><b>1–6</b> Powers · <b>6</b> deploys the Wingsuit mid-air to glide</div>
           <div><b>SPACE</b> Hold to charge, release to jump</div>
           <div><b>SHIFT</b> Boost (fill the meter with tricks)</div>
           <div><b>E</b> Grab (hold in the air for style points)</div>
@@ -686,7 +709,7 @@ export class UIManager {
       </div>
       <div class="hud-powerups" id="hud-powerups"></div>
       <div class="hud-powerbar" id="hud-powerbar"></div>
-      <div class="hud-hint" id="hud-hint">A / D CARVE · SPACE JUMP · IN AIR: A / D SPIN · W / S FLIP · E GRAB · SHIFT BOOST · 1-5 POWERS</div>
+      <div class="hud-hint" id="hud-hint">AUTO-RIDE · A / D CARVE · SPACE JUMP · IN AIR: A / D SPIN · W / S FLIP · E GRAB · 1-6 POWERS · 6 = WINGSUIT</div>
       <div class="hud-center">
         <div class="hud-countdown hidden" id="hud-countdown"></div>
         <div class="hud-tricks" id="hud-tricks"></div>
@@ -887,7 +910,12 @@ export class UIManager {
     bus.on('shield-save', () => this.trickToast('🛡️ SHIELD SAVED YOU!', 'perfect'));
     bus.on('arch', () => this.trickToast('❄️ ICE ARCH!', 'ring'));
     bus.on('power-used', (p) => this.trickToast(`${p.icon} ${p.name.toUpperCase()}!`, 'powerup'));
-    bus.on('power-denied', (p) => this.toast(`${p.icon} ${p.name} recharging…`, '', 1200));
+    bus.on('power-denied', (p) => this.toast(
+      p.reason === 'air' ? `${p.icon} ${p.name} only works mid-air — jump first!`
+        : `${p.icon} ${p.name} recharging…`, '', 1400));
+    bus.on('meteor-warning', () => this.trickToast('☄️ INCOMING!', 'crash'));
+    bus.on('nearmiss', () => this.trickToast('NEAR MISS +50', 'checkpoint'));
+    bus.on('closepass', () => this.trickToast('CLOSE PASS +75', 'checkpoint'));
     bus.on('countdown', (e) => {
       const cd = this.el.hud.querySelector('#hud-countdown');
       cd.classList.remove('hidden');
@@ -1015,6 +1043,7 @@ export class UIManager {
           (def.id === 'nitro' && player.effects.nitro > 0) ||
           (def.id === 'shield' && player.effects.shield > 0) ||
           (def.id === 'magnet' && player.effects.magnet > 0) ||
+          (def.id === 'wingsuit' && player.effects.wingsuit > 0) ||
           (def.id === 'slowmo' && game.timeScale < 1);
         chip.classList.toggle('active', active);
         cd.textContent = ready ? '' : `${Math.ceil(remaining)}`;
