@@ -36,12 +36,16 @@ void main() {
 
 // #FRAGMENT
 uniform float uOpacity;
+uniform float uStreak;  // 0 = round flakes, 1 = vertical rain streaks
 varying float vFade;
 
 void main() {
   vec2 c = gl_PointCoord - 0.5;
   float d = length(c);
-  float alpha = smoothstep(0.5, 0.12, d) * uOpacity * vFade;
+  float flake = smoothstep(0.5, 0.12, d);
+  float streak = smoothstep(0.16, 0.03, abs(c.x)) * smoothstep(0.52, 0.15, abs(c.y));
+  float shape = mix(flake, streak, uStreak);
+  float alpha = shape * uOpacity * vFade;
   if (alpha < 0.01) discard;
-  gl_FragColor = vec4(0.95, 0.97, 1.0, alpha);
+  gl_FragColor = vec4(0.93, 0.96, 1.0, alpha);
 }

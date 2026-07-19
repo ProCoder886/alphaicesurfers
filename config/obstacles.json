@@ -163,6 +163,13 @@
       "hover": 4.2,
       "onPath": true,
       "alignPath": true
+    },
+    {
+      "id": "flag",
+      "kind": "decor",
+      "radius": 0.4,
+      "baseDensity": 0,
+      "points": 0
     }
   ],
   "corridorClearance": 13,

@@ -123,7 +123,7 @@ export class UIManager {
       </nav>
       <footer class="menu-footer">
         <button class="btn btn-small" id="btn-fullscreen">⛶ Fullscreen</button>
-        <span class="version">v1.4.0 · WebGL2</span>
+        <span class="version">v1.5.0 · WebGL2</span>
       </footer>`;
     this.addScreen('main', s);
 
@@ -738,7 +738,8 @@ export class UIManager {
         <div class="hud-tricks" id="hud-tricks"></div>
       </div>
       <div class="vignette" id="vignette"></div>
-      <div class="speedlines" id="speedlines"></div>`;
+      <div class="speedlines" id="speedlines"></div>
+      <div class="lightning" id="lightning"></div>`;
     this.root.appendChild(hud);
     this.el.hud = hud;
     this.el.minimap = hud.querySelector('#minimap');
@@ -937,6 +938,13 @@ export class UIManager {
       p.reason === 'air' ? `${p.icon} ${p.name} only works mid-air — jump first!`
         : `${p.icon} ${p.name} recharging…`, '', 1400));
     bus.on('meteor-warning', () => this.trickToast('☄️ INCOMING!', 'crash'));
+    bus.on('lightning', () => {
+      const l = this.el.hud.querySelector('#lightning');
+      if (!l) return;
+      l.classList.remove('flash');
+      void l.offsetWidth;
+      l.classList.add('flash');
+    });
     bus.on('nearmiss', () => this.trickToast('NEAR MISS +50', 'checkpoint'));
     bus.on('closepass', () => this.trickToast('CLOSE PASS +75', 'checkpoint'));
     bus.on('countdown', (e) => {

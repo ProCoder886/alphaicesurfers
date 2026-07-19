@@ -58,9 +58,9 @@ export class World {
     this.worker = null;
     this.initWorker();
 
-    // Shared grid indices for full and coarse LOD meshes.
-    this.indexFull = World.buildGridIndex(CHUNK_RES, 1);
-    this.indexCoarse = World.buildGridIndex(CHUNK_RES, 4);
+    // Shared LOD templates (surface index + crack-hiding skirt index).
+    this.lodFull = World.buildLODTemplate(1);
+    this.lodCoarse = World.buildLODTemplate(4);
   }
 
   initWorker() {
@@ -80,20 +80,48 @@ export class World {
     }
   }
 
-  static buildGridIndex(res, stride) {
-    const n = res + 1;
-    const cells = res / stride;
+  /** Top-surface vertex index along one chunk edge (0=S, 1=N, 2=W, 3=E). */
+  static edgeTopIndex(e, k, sn) {
+    switch (e) {
+      case 0: return k;                       // south (j = 0)
+      case 1: return (sn - 1) * sn + k;       // north (j = sn-1)
+      case 2: return k * sn;                  // west  (i = 0)
+      default: return k * sn + (sn - 1);      // east  (i = sn-1)
+    }
+  }
+
+  /**
+   * LOD template for a given stride: a sampled top-surface grid plus a
+   * vertical "skirt" of double-faced quads hanging from every edge.
+   * Skirts hide the T-junction cracks that otherwise open between
+   * neighbouring chunks of different LOD — the classic terrain fix.
+   */
+  static buildLODTemplate(stride) {
+    const sn = CHUNK_RES / stride + 1;
     const idx = [];
-    for (let j = 0; j < cells; j++) {
-      for (let i = 0; i < cells; i++) {
-        const a = (j * stride) * n + (i * stride);
-        const b = a + stride;
-        const c = a + stride * n;
-        const d = c + stride;
+    // Top surface.
+    for (let j = 0; j < sn - 1; j++) {
+      for (let i = 0; i < sn - 1; i++) {
+        const a = j * sn + i, b = a + 1, c = a + sn, d = c + 1;
         idx.push(a, c, b, b, c, d);
       }
     }
-    return new THREE.BufferAttribute(new Uint32Array(idx), 1);
+    // Skirts (both windings so they're visible from any side).
+    const base = sn * sn;
+    for (let e = 0; e < 4; e++) {
+      for (let k = 0; k < sn - 1; k++) {
+        const t0 = World.edgeTopIndex(e, k, sn);
+        const t1 = World.edgeTopIndex(e, k + 1, sn);
+        const s0 = base + e * sn + k;
+        const s1 = s0 + 1;
+        idx.push(t0, s0, t1, t1, s0, s1, t0, t1, s0, t1, s1, s0);
+      }
+    }
+    return {
+      stride, sn,
+      vertCount: sn * sn + 4 * sn,
+      index: new THREE.BufferAttribute(new Uint32Array(idx), 1)
+    };
   }
 
   /* ================= map lifecycle ================= */
@@ -267,6 +295,7 @@ export class World {
         .replace('#include <begin_vertex>', `#include <begin_vertex>\n${sh.VERTEX_MAIN}`);
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', `#include <common>\n${sh.FRAG_DECL}`)
+        .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${sh.FRAG_NORMAL || ''}`)
         .replace('#include <color_fragment>', `#include <color_fragment>\n${sh.FRAG_COLOR}`)
         .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\n${sh.FRAG_ROUGHNESS}`)
         .replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>\n${sh.FRAG_METALNESS}`)
@@ -317,6 +346,10 @@ export class World {
     ramp.translate(0, 1.15, 0);
     const pad = new THREE.CylinderGeometry(2.0, 2.3, 0.55, 12);
     pad.translate(0, 0.28, 0);
+    const flagPole = new THREE.CylinderGeometry(0.07, 0.1, 2.6, 5);
+    flagPole.translate(0, 1.3, 0);
+    const flagCloth = new THREE.PlaneGeometry(0.95, 0.55);
+    flagCloth.translate(0.55, 2.25, 0);
 
     // Power-up pickups — distinct silhouettes, individually animated.
     const magnet = new THREE.TorusKnotGeometry(0.85, 0.26, 48, 8);
@@ -369,7 +402,12 @@ export class World {
       },
       iceridge: { parts: [[iceridge, glow('#8b3ddb', 0.8, { roughness: 0.2, transparent: true, opacity: 0.94 })]], shadow: true },
       boulder: { parts: [[boulder, glow('#5e2f8e', 0.55, { roughness: 0.3 })]], shadow: true },
-      icearch: { parts: [[archGeo, glow(pal.crystal, 1.1, { roughness: 0.2, metalness: 0.3 })]], shadow: false }
+      icearch: { parts: [[archGeo, glow(pal.crystal, 1.1, { roughness: 0.2, metalness: 0.3 })]], shadow: false },
+      flag: {
+        parts: [[flagPole, flat('#3a4254')],
+                [flagCloth, glow('#ff4f5e', 0.7, { side: THREE.DoubleSide })]],
+        shadow: false
+      }
     };
     this.pulseMaterials = [
       this.obstacleTemplates.ring.parts[0][1],
@@ -771,22 +809,50 @@ export class World {
 
   buildChunkMesh(record, lod) {
     this.disposeTerrainMesh(record);
+    const tmpl = lod === 1 ? this.lodFull : this.lodCoarse;
+    const { sn, stride, vertCount } = tmpl;
     const n = CHUNK_RES + 1;
     const step = CHUNK_SIZE / CHUNK_RES;
-    const geo = new THREE.BufferGeometry();
-    const positions = new Float32Array(n * n * 3);
-    for (let j = 0; j < n; j++) {
-      for (let i = 0; i < n; i++) {
-        const idx = j * n + i;
-        positions[idx * 3] = i * step;
-        positions[idx * 3 + 1] = record.heights[idx];
-        positions[idx * 3 + 2] = j * step;
+    const SKIRT = 6; // metres of skirt below every edge
+
+    const positions = new Float32Array(vertCount * 3);
+    const normals = new Float32Array(vertCount * 3);
+    const surf = new Float32Array(vertCount);
+
+    for (let j = 0; j < sn; j++) {
+      for (let i = 0; i < sn; i++) {
+        const src = (j * stride) * n + (i * stride);
+        const dst = j * sn + i;
+        positions[dst * 3] = i * stride * step;
+        positions[dst * 3 + 1] = record.heights[src];
+        positions[dst * 3 + 2] = j * stride * step;
+        normals[dst * 3] = record.normals[src * 3];
+        normals[dst * 3 + 1] = record.normals[src * 3 + 1];
+        normals[dst * 3 + 2] = record.normals[src * 3 + 2];
+        surf[dst] = record.surf[src];
       }
     }
+    // Skirt vertices: copies of each edge vertex, dropped straight down.
+    const base = sn * sn;
+    for (let e = 0; e < 4; e++) {
+      for (let k = 0; k < sn; k++) {
+        const top = World.edgeTopIndex(e, k, sn);
+        const dst = base + e * sn + k;
+        positions[dst * 3] = positions[top * 3];
+        positions[dst * 3 + 1] = positions[top * 3 + 1] - SKIRT;
+        positions[dst * 3 + 2] = positions[top * 3 + 2];
+        normals[dst * 3] = normals[top * 3];
+        normals[dst * 3 + 1] = normals[top * 3 + 1];
+        normals[dst * 3 + 2] = normals[top * 3 + 2];
+        surf[dst] = surf[top];
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('normal', new THREE.BufferAttribute(record.normals, 3));
-    geo.setAttribute('aSurf', new THREE.BufferAttribute(record.surf, 1));
-    geo.setIndex(lod === 1 ? this.indexFull : this.indexCoarse);
+    geo.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    geo.setAttribute('aSurf', new THREE.BufferAttribute(surf, 1));
+    geo.setIndex(tmpl.index);
     geo.computeBoundingSphere();
 
     const mesh = new THREE.Mesh(geo, this.terrainMat);

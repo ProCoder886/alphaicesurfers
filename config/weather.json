@@ -1,105 +1,132 @@
 {
   "dayLengthSeconds": 480,
   "transitionSeconds": 12,
-  "dynamicIntervalRange": [ 45, 110 ],
+  "dynamicIntervalRange": [
+    45,
+    110
+  ],
   "states": [
     {
       "id": "sunny",
       "name": "Bluebird Day",
-      "icon": "☀️",
+      "icon": "\u2600\ufe0f",
       "fogDensity": 0.0016,
       "lightScale": 1.0,
       "ambientScale": 1.0,
       "snowRate": 0.0,
       "fallSpeed": 8,
       "particleSize": 2.6,
-      "wind": [ 0.2, 1.2 ],
+      "wind": [
+        0.2,
+        1.2
+      ],
       "cloudOpacity": 0.25,
       "weight": 4
     },
     {
       "id": "cloudy",
       "name": "Overcast",
-      "icon": "☁️",
+      "icon": "\u2601\ufe0f",
       "fogDensity": 0.0028,
       "lightScale": 0.72,
       "ambientScale": 1.15,
       "snowRate": 0.0,
       "fallSpeed": 8,
       "particleSize": 2.6,
-      "wind": [ 0.6, 2.0 ],
+      "wind": [
+        0.6,
+        2.0
+      ],
       "cloudOpacity": 0.85,
       "weight": 3
     },
     {
       "id": "snow",
       "name": "Light Snow",
-      "icon": "🌨️",
+      "icon": "\ud83c\udf28\ufe0f",
       "fogDensity": 0.0042,
       "lightScale": 0.62,
       "ambientScale": 1.1,
       "snowRate": 0.45,
       "fallSpeed": 9,
       "particleSize": 2.6,
-      "wind": [ 0.8, 2.4 ],
+      "wind": [
+        0.8,
+        2.4
+      ],
       "cloudOpacity": 0.9,
       "weight": 3
     },
     {
       "id": "heavysnow",
       "name": "Heavy Snow",
-      "icon": "❄️",
+      "icon": "\u2744\ufe0f",
       "fogDensity": 0.0075,
       "lightScale": 0.5,
       "ambientScale": 1.05,
       "snowRate": 1.0,
       "fallSpeed": 11,
       "particleSize": 3.0,
-      "wind": [ 1.4, 3.2 ],
+      "wind": [
+        1.4,
+        3.2
+      ],
       "cloudOpacity": 1.0,
       "weight": 2
     },
     {
       "id": "blizzard",
       "name": "Blizzard",
-      "icon": "🌬️",
+      "icon": "\ud83c\udf2c\ufe0f",
       "fogDensity": 0.013,
       "lightScale": 0.42,
       "ambientScale": 0.95,
       "snowRate": 1.0,
       "fallSpeed": 16,
       "particleSize": 3.0,
-      "wind": [ 2.6, 4.0 ],
+      "wind": [
+        2.6,
+        4.0
+      ],
       "windPhysics": 1.0,
       "cloudOpacity": 1.0,
-      "weight": 1
+      "weight": 1,
+      "lightning": true
     },
     {
       "id": "hail",
       "name": "Hailstorm",
-      "icon": "🧊",
+      "icon": "\ud83e\uddca",
       "fogDensity": 0.008,
       "lightScale": 0.48,
       "ambientScale": 1.0,
       "snowRate": 1.0,
       "fallSpeed": 30,
       "particleSize": 3.6,
-      "wind": [ 2.0, 3.6 ],
+      "wind": [
+        2.0,
+        3.6
+      ],
       "windPhysics": 0.8,
       "cloudOpacity": 1.0,
-      "weight": 1
+      "weight": 1,
+      "streak": 0.45,
+      "lightning": true
     },
     {
       "id": "windstorm",
       "name": "Windstorm",
-      "icon": "🌪️",
+      "icon": "\ud83c\udf2a\ufe0f",
       "fogDensity": 0.005,
       "lightScale": 0.65,
       "ambientScale": 1.0,
       "snowRate": 0.25,
       "fallSpeed": 12,
       "particleSize": 2.2,
-      "wind": [ 3.4, 4.6 ],
+      "wind": [
+        3.4,
+        4.6
+      ],
       "windPhysics": 1.5,
       "cloudOpacity": 0.8,
       "weight": 1
@@ -107,42 +134,52 @@
     {
       "id": "icerain",
       "name": "Ice Rain",
-      "icon": "🌧️",
+      "icon": "\ud83c\udf27\ufe0f",
       "fogDensity": 0.006,
       "lightScale": 0.55,
       "ambientScale": 1.05,
       "snowRate": 0.85,
       "fallSpeed": 46,
       "particleSize": 1.7,
-      "wind": [ 1.0, 2.2 ],
+      "wind": [
+        1.0,
+        2.2
+      ],
       "cloudOpacity": 0.95,
-      "weight": 1
+      "weight": 1,
+      "streak": 1.0
     },
     {
       "id": "fog",
       "name": "Freezing Fog",
-      "icon": "🌫️",
+      "icon": "\ud83c\udf2b\ufe0f",
       "fogDensity": 0.011,
       "lightScale": 0.55,
       "ambientScale": 1.2,
       "snowRate": 0.05,
       "fallSpeed": 6,
       "particleSize": 2.4,
-      "wind": [ 0.1, 0.8 ],
+      "wind": [
+        0.1,
+        0.8
+      ],
       "cloudOpacity": 0.7,
       "weight": 2
     },
     {
       "id": "night",
       "name": "Starry Night",
-      "icon": "🌙",
+      "icon": "\ud83c\udf19",
       "fogDensity": 0.002,
       "lightScale": 0.8,
       "ambientScale": 0.9,
       "snowRate": 0.0,
       "fallSpeed": 8,
       "particleSize": 2.6,
-      "wind": [ 0.2, 1.2 ],
+      "wind": [
+        0.2,
+        1.2
+      ],
       "cloudOpacity": 0.12,
       "forceNight": true,
       "weight": 2
@@ -150,14 +187,17 @@
     {
       "id": "aurora",
       "name": "Aurora Night",
-      "icon": "🌌",
+      "icon": "\ud83c\udf0c",
       "fogDensity": 0.0022,
       "lightScale": 0.85,
       "ambientScale": 0.9,
       "snowRate": 0.08,
       "fallSpeed": 8,
       "particleSize": 2.6,
-      "wind": [ 0.3, 1.4 ],
+      "wind": [
+        0.3,
+        1.4
+      ],
       "cloudOpacity": 0.15,
       "forceNight": true,
       "aurora": true,

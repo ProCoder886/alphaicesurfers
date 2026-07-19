@@ -692,6 +692,15 @@
 
 .speedlines.active { opacity: 1; }
 
+.lightning {
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(235, 242, 255, 0.85);
+}
+
+.lightning.flash { animation: lightning-flash 0.45s ease-out; }
+
 /* ---------------- toasts ---------------- */
 
 #toasts {

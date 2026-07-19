@@ -296,6 +296,48 @@ export class TerrainGenerator {
         });
       }
     }
+
+    // ---- route beats: designed content lands every ~70 m so the road
+    // never runs empty — crystal arcs, rings, ramps and pads take turns.
+    const beatSpacing = 70;
+    for (let bz = Math.ceil(oz / beatSpacing) * beatSpacing;
+      bz < oz + CHUNK_SIZE; bz += beatSpacing) {
+      if (bz < 60) continue;
+      const br = mulberry32(this.seed ^ Math.imul(bz, 2654435761));
+      const roll = br();
+      const cxx = corridorX(bz);
+      const tangent = Math.atan2(corridorX(bz + 1) - corridorX(bz - 1), 2);
+      if (roll < 0.4) {
+        // A trail of crystals tracing the racing line.
+        for (let k = -2; k <= 2; k++) {
+          const zz = bz + k * 7;
+          if (zz < oz || zz >= oz + CHUNK_SIZE) continue;
+          const xx = corridorX(zz);
+          out.push({ type: 'crystal', x: xx, z: zz, y: this.height(xx, zz), rot: br() * 6.28, scale: 1 });
+        }
+      } else if (roll < 0.6) {
+        out.push({ type: 'ring', x: cxx, z: bz, y: this.height(cxx, bz) + 5.5, rot: tangent, scale: 1.1 });
+      } else if (roll < 0.78) {
+        out.push({ type: 'ramp', x: cxx, z: bz, y: this.height(cxx, bz), rot: tangent, scale: 1.2 });
+      } else {
+        out.push({ type: 'pad', x: cxx, z: bz, y: this.height(cxx, bz), rot: br() * 6.28, scale: 1.1 });
+      }
+    }
+
+    // ---- course flags marking the groove edges every ~45 m, so the
+    // route reads as a designed run rather than open snow.
+    const flagSpacing = 45;
+    for (let fz = Math.ceil(oz / flagSpacing) * flagSpacing;
+      fz < oz + CHUNK_SIZE; fz += flagSpacing) {
+      if (fz < 30) continue;
+      const cf = corridorX(fz);
+      const half = (p.floorWidth || 16) - 2;
+      for (const side of [-1, 1]) {
+        const xx = cf + side * half;
+        if (xx < ox - 2 || xx > ox + CHUNK_SIZE + 2) continue;
+        out.push({ type: 'flag', x: xx, z: fz, y: this.height(xx, fz), rot: side > 0 ? Math.PI : 0, scale: 1 });
+      }
+    }
     return out;
   }
 }

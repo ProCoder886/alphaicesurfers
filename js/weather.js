@@ -33,6 +33,7 @@ export class WeatherSystem {
     this.windTarget = new THREE.Vector2();
     this.windStrength = 1;
     this.gustPhase = 0;
+    this.lightningFlash = 0;
 
     this.group = null;
     this.snow = null;
@@ -112,6 +113,7 @@ export class WeatherSystem {
       uRange: { value: 55 },
       uFallSpeed: { value: 6 },
       uSize: { value: 2.6 },
+      uStreak: { value: 0 },
       uOpacity: { value: 0 }
     };
     const mat = new THREE.ShaderMaterial({
@@ -364,7 +366,8 @@ export class WeatherSystem {
     // --- sun & ambient ---
     const pal = this.map.palette;
     if (world.sun) {
-      world.sun.intensity = 2.9 * this.prop('lightScale') * dayFactor;
+      world.sun.intensity = 2.9 * this.prop('lightScale') * dayFactor
+        + (this.lightningFlash > 0 ? 5 : 0);
       // Warm the sun near the horizon.
       _colA.set(pal.sunColor);
       _colB.set('#ff9d5c');
@@ -419,7 +422,15 @@ export class WeatherSystem {
     this.snowUniforms.uCamPos.value.copy(game.camera.position);
     this.snowUniforms.uFallSpeed.value = this.prop('fallSpeed') || 8;
     this.snowUniforms.uSize.value = this.prop('particleSize') || 2.6;
+    this.snowUniforms.uStreak.value = this.prop('streak');
     this.snow.visible = snowRate > 0.01;
+
+    // --- lightning during violent storms ---
+    if (this.lightningFlash > 0) this.lightningFlash -= dt;
+    if (this.current && this.current.lightning && Math.random() < dt * 0.18) {
+      this.lightningFlash = 0.25;
+      game.bus.emit('lightning', {});
+    }
 
     // --- aurora ---
     const wantsAurora = (this.current && this.current.aurora) ? 1 : 0;

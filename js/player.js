@@ -950,6 +950,10 @@ export class Player {
           this.spray.spawn(b.pos, b.vel, Math.ceil(this.carveIntensity * 4), 2.2);
         }
       }
+      // Speed dust: a rooster tail of powder at high velocity.
+      if (this.spray && this.speed > 26 && Math.random() < dt * (this.speed - 20) * 1.4) {
+        this.spray.spawn(b.pos, b.vel, 2, 1.4);
+      }
     } else {
       // Airborne: flips + grab pose (or wingsuit glide pose).
       const gliding = this.effects.wingsuit > 0;

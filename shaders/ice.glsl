@@ -32,6 +32,19 @@ float aisHash(vec3 p) {
   if (vSurf > 1.1) diffuseColor.rgb = mix(diffuseColor.rgb, uLakeTint, 0.7);
 }
 
+// #FRAG_NORMAL
+{
+  // Micro-bumped snow: cheap cell-noise normal perturbation gives the
+  // surface a granular, wind-packed texture instead of flat shading.
+  float icyN = clamp(vSurf, 0.0, 1.0);
+  vec2 gp = vWorldPos2.xz * 2.4;
+  float hh0 = aisHash(vec3(floor(gp), 7.0));
+  float hh1 = aisHash(vec3(floor(gp + vec2(1.0, 0.0)), 7.0));
+  float hh2 = aisHash(vec3(floor(gp + vec2(0.0, 1.0)), 7.0));
+  vec3 bumpN = normalize(vec3(hh0 - hh1, 1.7, hh0 - hh2));
+  normal = normalize(mix(normal, normalize(normal + bumpN * 0.6), (1.0 - icyN) * 0.4));
+}
+
 // #FRAG_ROUGHNESS
 {
   float icy = clamp(vSurf, 0.0, 1.0);

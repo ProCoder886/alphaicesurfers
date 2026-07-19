@@ -200,6 +200,13 @@ export class AudioManager {
     });
     bus.on('nearmiss', () => this.noiseBurst(0.2, 2200, 1.2, 0.18, 'bandpass'));
     bus.on('closepass', () => this.noiseBurst(0.2, 1600, 1.2, 0.18, 'bandpass'));
+    bus.on('lightning', () => {
+      // Thunder rolls in shortly after the flash.
+      setTimeout(() => {
+        this.noiseBurst(1.6, 85, 0.4, 0.5, 'lowpass');
+        this.blip(55, 1.2, 'sine', 0.25, -20);
+      }, 250 + Math.random() * 400);
+    });
     bus.on('ramp', () => this.noiseBurst(0.25, 900, 1, 0.2, 'highpass'));
     bus.on('checkpoint', () => this.chime([0, 4, 7, 12], 540, 0.06, 0.2));
     bus.on('countdown', (e) => this.blip(e.n === 0 ? 880 : 440, 0.18, 'square', 0.15));

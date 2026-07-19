@@ -278,7 +278,7 @@ export class PhysicsEngine {
     if (!nearby.length) return;
     const rr = this.cfg.rider.radius;
     for (const ob of nearby) {
-      if (ob.consumed) continue;
+      if (ob.consumed || ob.kind === 'decor') continue;
       const dx = body.pos.x - ob.x;
       const dz = body.pos.z - ob.z;
       const d2 = dx * dx + dz * dz;
